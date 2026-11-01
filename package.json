@@ -28,5 +28,19 @@
       ]
     }
   },
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dangaoyu21-netizen/fishkit.git"
+  },
+  "homepage": "https://github.com/dangaoyu21-netizen/fishkit",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "persona",
+    "memory",
+    "mood",
+    "companion"
+  ],
+  "author": "dangaoyu21-netizen"
 }

@@ -399,7 +399,14 @@ window.__ModuleLoader__.load({
               if (d.有新版本) return set更新信息('有新版本：' + d.最新 + '（' + d.仓库 + '）')
               set更新信息(d.错误 ? ('暂时查不到新版本：' + d.错误) : ('已经是最新的 v' + d.当前))
             }).catch((error) => set更新信息('检查失败：' + String(error)))
-          } }, '检查更新')),
+          } }, '检查更新'),
+          e('button', { className: 'fk-btn', onClick: () => {
+            set更新信息('正在更新…')
+            void fetch('/dsh-fishsoul/update/apply', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' })
+              .then((r) => r.json())
+              .then((d) => set更新信息(d.ok ? '✅ ' + (d.说 || '更新完成') : '⚠ ' + (d.说 || '更新失败')))
+              .catch((error) => set更新信息('更新失败：' + String(error)))
+          } }, '更新')),
         (更新信息 || 错 || !状态) ? e('div', { className: 'fk-badge' }, e('span', { className: 'fk-note' }, 更新信息 || (错 ? '档案没连上：' + 错 : '正在读档案…'))) : null,
         e('div', { className: 'fk-tabs' },
           PAGES.map((p, i) => e('button', { key: p, className: 'fk-tab' + (i === page ? ' active' : ''), onClick: () => setPage(i) }, p))),
