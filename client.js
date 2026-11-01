@@ -341,13 +341,25 @@ window.__ModuleLoader__.load({
     }
 
     // ── 更新历史页 ─────────────────────────────────────────
-    const 更新页 = ({ 备份信息 }) => e('div', null,
-      e('div', { className: 'fk-repo' }, REPO),
-      e('div', { className: 'fk-win', style: { maxHeight: 260, overflow: 'auto' } },
-        e('div', { className: 'fk-card', style: { marginBottom: 8 } },
-          e('span', { className: 'fk-doc-title' }, 'v0.1'), e('span', { className: 'fk-sub' }, '　2026-10-31'))),
-      e(Note, null, '图纸放 Git 仓库，插件里只留目录。'),
-      e('div', { className: 'fk-say' }, 备份信息 || ''))
+    const 更新页 = ({ 备份信息 }) => {
+      const [记录, set记录] = useState('')
+      useEffect(() => {
+        void fetch('/dsh-fishsoul/changelog').then((r) => r.json()).then((d) => { if (d && d.ok) set记录(String(d.文 || '')) }).catch(() => {})
+      }, [])
+      const 段 = 记录.split(/\n## /).filter(Boolean).map((x) => x.trim())
+      return e('div', null,
+        e('div', { className: 'fk-repo' }, REPO),
+        e('div', { className: 'fk-win', style: { maxHeight: 300, overflow: 'auto' } },
+          段.length === 0
+            ? e('div', { className: 'fk-note' }, '还没有更新记录')
+            : 段.map((x, i) => e('div', { className: 'fk-card', key: i, style: { marginBottom: 8 } },
+              e('div', { className: 'fk-doc-title' }, 'v' + x.split(' · ')[0].replace(/^v/, '')),
+              e('span', { className: 'fk-sub' }, '　' + String(x.split(' · ')[1] || '').split('\n')[0]),
+              e('div', { className: 'fk-note', style: { textAlign: 'left', margin: '6px 0 0' } },
+                x.split('\n').slice(1).filter((l) => l.startsWith('- ')).map((l) => l.slice(2)).join('；'))))),
+        e(Note, null, '图纸放 Git 仓库，插件里只留目录。'),
+        e('div', { className: 'fk-say' }, 备份信息 || ''))
+    }
 
     // ── 设置页 ─────────────────────────────────────────────
     function FishSoulSettings() {
