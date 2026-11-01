@@ -346,8 +346,10 @@ window.__ModuleLoader__.load({
       useEffect(() => {
         void fetch('/dsh-fishsoul/changelog').then((r) => r.json()).then((d) => { if (d && d.ok) set记录(String(d.文 || '')) }).catch(() => {})
       }, [])
-      const 段 = 记录.split(/\n## /).filter(Boolean).map((x) => x.trim())
+      const 正文 = 记录.replace(/^# .*\n+/, '')
+      const 段 = 正文.split(/\n## /).filter(Boolean).map((x) => x.trim())
       return e('div', null,
+        e('div', { className: 'fk-doc-title', style: { margin: '2px 0 8px' } }, '更新历史'),
         e('div', { className: 'fk-repo' }, REPO),
         e('div', { className: 'fk-win', style: { maxHeight: 300, overflow: 'auto' } },
           段.length === 0
