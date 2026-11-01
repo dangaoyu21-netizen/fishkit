@@ -1,6 +1,6 @@
 {
   "name": "dsh-fishkit",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "用经历去塑造小肥鱼的插件：聊过的事记得住，心情会变还能自己记，会自己长出性格，对谁都有好恶，闲着时还会自己找点事做。",
   "type": "module",
   "main": "lib/index.js",
