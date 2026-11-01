@@ -21,10 +21,31 @@
 
 ## 安装
 
-1. 把本仓库放进 DSH 的插件目录（`~/.dsh/profiles/desktop/node_modules/dsh-fishkit`，或用你自己的 junction）。
-2. 在 profile 的 `package.json` 里把 `dsh-fishkit` 加进依赖和 `dsh.profile.bundles`。
-3. 重启 DSH。
-4. 打开设置页的「小肥鱼」，第一次会自己建档案。
+### 手动安装
+
+把本仓库放进 DSH 的插件目录（`~/.dsh/profiles/desktop/node_modules/dsh-fishkit`，或用你自己的 junction），在 profile 的 `package.json` 里把 `dsh-fishkit` 加进依赖和 `dsh.profile.bundles`，然后重启 DSH。打开设置页的「小肥鱼」，第一次会自己建档案。
+
+### 自动安装（GitHub）
+
+在 DSH 插件页的「添加插件」里输入：
+
+```
+github:dangaoyu21-netizen/fishkit
+```
+
+### 自动安装（npm）
+
+在 DSH 插件页的「添加插件」里输入包名：
+
+```
+dsh-fishkit
+```
+
+或者命令行：
+
+```
+pnpm add dsh-fishkit
+```
 
 ## 数据在哪
 

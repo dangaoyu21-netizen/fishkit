@@ -299,18 +299,29 @@ window.__ModuleLoader__.load({
     const 行为页 = ({ 状态, 改 }) => {
       const r = 状态.rules || {}
       const idle = r.idle || { enabled: true, idleMinutes: 120, maxPerDay: 2 }
+      const [编辑, set编辑] = useState('')
+      const 存规则 = (id, text) => {
+        改({ rules: { ...r, rules: (r.rules || []).map((y) => (y.id === id ? { ...y, text: String(text || y.text) } : y)) } })
+      }
+      const 渲染规则 = (x) => 编辑 === x.id
+        ? e('input', {
+            className: 'fk-search', style: { width: '100%' }, defaultValue: x.text, autoFocus: true,
+            onBlur: (ev) => { 存规则(x.id, ev.target.value); set编辑('') },
+            onKeyDown: (ev) => { if (ev.key === 'Enter') ev.target.blur() },
+          })
+        : e('div', { key: x.id, title: '点一下改', style: { cursor: 'pointer' }, onClick: () => set编辑(x.id) }, '· ' + x.text)
       return e('div', null,
         e('div', { className: 'fk-switch-row' }, e('span', { className: 'fk-name' }, '行为'), e(Switch, { on: (状态.manifest && 状态.manifest.modules && 状态.manifest.modules.behavior) !== false, onChange: (v) => 改({ manifest: { ...(状态.manifest || {}), modules: { ...((状态.manifest || {}).modules || {}), behavior: v } } }) })),
         e('div', { className: 'fk-card' },
           e('div', { className: 'fk-row' }, e('span', { className: 'fk-name' }, '群聊规矩')),
           e('div', { className: 'fk-win', style: { maxHeight: 150, overflow: 'auto' } },
             (r.rules || []).filter((x) => ['no-politic-scandals', 'repeat-hiss', 'group-five-seconds'].includes(x.id))
-              .map((x) => e('div', { key: x.id }, '· ' + x.text)))),
+              .map((x) => 渲染规则(x)))),
         e('div', { className: 'fk-card' },
           e('div', { className: 'fk-row' }, e('span', { className: 'fk-name' }, '其他规矩')),
           e('div', { className: 'fk-win', style: { maxHeight: 100, overflow: 'auto' } },
             (r.rules || []).filter((x) => !['no-politic-scandals', 'repeat-hiss', 'group-five-seconds'].includes(x.id))
-              .map((x) => e('div', { key: x.id }, '· ' + x.text)))),
+              .map((x) => 渲染规则(x)))),
         e('div', { className: 'fk-switch-row' }, e('span', { className: 'fk-name' }, '主动找事做'), e(Switch, { on: idle.enabled !== false, onChange: (v) => 改({ rules: { ...r, idle: { ...idle, enabled: v } } }) })),
         e('div', { className: 'fk-card' },
           e('div', { className: 'fk-row' },
