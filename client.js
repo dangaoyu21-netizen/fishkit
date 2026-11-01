@@ -390,7 +390,6 @@ window.__ModuleLoader__.load({
         e('div', { className: 'fk-top' },
           e('span', { className: 'fk-brand' }, '小肥鱼 · 人格'),
           e('span', { className: 'fk-ver' }, 'v' + VERSION),
-          e('span', { className: 'fk-ver' }, '档案格式 v' + SCHEMA),
           e('span', { className: 'fk-grow' }),
           e('button', { className: 'fk-btn', onClick: 备份, title: '把当前档案备份一份（带校验码）' }, '备份'),
           e('button', { className: 'fk-btn', onClick: () => {
@@ -401,7 +400,7 @@ window.__ModuleLoader__.load({
               set更新信息(d.错误 ? ('暂时查不到新版本：' + d.错误) : ('已经是最新的 v' + d.当前))
             }).catch((error) => set更新信息('检查失败：' + String(error)))
           } }, '检查更新')),
-        e('div', { className: 'fk-badge' }, e('span', { className: 'fk-note' }, 更新信息 || (错 ? '档案没连上：' + 错 : (!状态 ? '正在读档案…' : '（没有新版本时这里留空）')))),
+        (更新信息 || 错 || !状态) ? e('div', { className: 'fk-badge' }, e('span', { className: 'fk-note' }, 更新信息 || (错 ? '档案没连上：' + 错 : '正在读档案…'))) : null,
         e('div', { className: 'fk-tabs' },
           PAGES.map((p, i) => e('button', { key: p, className: 'fk-tab' + (i === page ? ' active' : ''), onClick: () => setPage(i) }, p))),
         !状态
