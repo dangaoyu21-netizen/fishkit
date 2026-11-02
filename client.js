@@ -154,11 +154,10 @@ window.__ModuleLoader__.load({
                     存人(人.map((x, j) => (j === i ? { ...x, value: v } : x)))
                   } })),
                 e('span', { className: 'fk-pc', style: { whiteSpace: 'nowrap' } }, '喜欢'),
-                e('input', { className: 'fk-search fk-num', inputMode: 'numeric', defaultValue: p.value, onChange: (ev) => {
-                  const 干净 = ev.target.value.replace(/[^0-9]/g, '')
-                  if (干净 !== ev.target.value) ev.target.value = 干净
-                }, onBlur: (ev) => {
-                  const v = Math.max(0, Math.min(100, parseInt(ev.target.value || '0', 10)))
+                e('input', { className: 'fk-search fk-num', inputMode: 'numeric', value: p.value, onChange: (ev) => {
+                  const t = String(ev.target.value).replace(/[^0-9]/g, '')
+                  if (!t) return
+                  const v = Math.max(0, Math.min(100, parseInt(t, 10)))
                   存人(人.map((x, j) => (j === i ? { ...x, value: v } : x)))
                 } }),
                 e('span', { className: 'fk-pc' }, '%'),
@@ -178,7 +177,10 @@ window.__ModuleLoader__.load({
             e('span', { style: { whiteSpace: 'nowrap' } }, '我是谁：'),
             e('input', { className: 'fk-search', style: { width: '38%' }, defaultValue: p.whoAmI || '', onBlur: (ev) => { if (ev.target.value !== (p.whoAmI || '')) 改({ pinned: { whoAmI: ev.target.value } }) } }),
             e('span', { style: { whiteSpace: 'nowrap' } }, '你是谁：'),
-            e('input', { className: 'fk-search', style: { width: '38%' }, defaultValue: p.whoAreYou || '', onBlur: (ev) => { if (ev.target.value !== (p.whoAreYou || '')) 改({ pinned: { whoAreYou: ev.target.value } }) } }))),
+            e('input', { className: 'fk-search', style: { width: '38%' }, defaultValue: p.whoAreYou || '', onBlur: (ev) => { if (ev.target.value !== (p.whoAreYou || '')) 改({ pinned: { whoAreYou: ev.target.value } }) } })),
+          e('div', { className: 'fk-row' },
+            e('span', { style: { whiteSpace: 'nowrap' } }, '用户背景：'),
+            e('input', { className: 'fk-search fk-grow', defaultValue: p.userBio || '', onBlur: (ev) => { if (ev.target.value !== (p.userBio || '')) 改({ pinned: { userBio: ev.target.value } }) } }))),
         e('div', { className: 'fk-card' },
           e('div', { className: 'fk-row' }, e('span', { className: 'fk-name' }, '初遇：')),
           e('div', { className: 'fk-win fk-w2' }, p.firstMeet || ''),
@@ -228,8 +230,8 @@ window.__ModuleLoader__.load({
           e('div', { className: 'fk-win', style: { maxHeight: 120, overflow: 'auto' } },
             (状态.moodHistory || []).length === 0
               ? e('div', { className: 'fk-note' }, '还没有记录')
-              : (状态.moodHistory || []).slice(-5).map((h, i) => e('div', { key: i },
-                (String(h.time || '').slice(11, 16)) + '　' + (h.emotion || '') + '（' + Number(h.valence || 0).toFixed(2) + ' / ' + Number(h.arousal || 0).toFixed(2) + '）' + (h.reason ? '　' + h.reason : ''))))),
+              : (状态.moodHistory || []).slice(0, 5).map((h, i) => e('div', { key: i },
+                (String(h.time || '').slice(11, 16)) + '　' + (h.emotion || '') + '（' + Number(h.valence || 0).toFixed(2) + ' / ' + Number(h.arousal || 0).toFixed(2) + '）' + (h.reason ? '　' + String(h.reason).slice(0, 30) : ''))))),
         e(Note, null,
           e('div', null, '修正速率为当前状态随时间向基准线靠近的速率。'),
           e('div', null, '阻尼为情绪走向极端的难度。')))
@@ -249,7 +251,8 @@ window.__ModuleLoader__.load({
         e('div', { className: 'fk-card' },
           e('div', { className: 'fk-row' }, e('span', { className: 'fk-name' }, '底色'), e('input', { className: 'fk-search fk-grow', defaultValue: base.base || '', onBlur: (ev) => { if (ev.target.value !== (base.base || '')) 改({ base: { base: ev.target.value } }) } })),
           e('div', { className: 'fk-row' }, e('span', { className: 'fk-name' }, '人设'), e('input', { className: 'fk-search fk-grow', defaultValue: base.persona || '', onBlur: (ev) => { if (ev.target.value !== (base.persona || '')) 改({ base: { persona: ev.target.value } }) } })),
-          e('div', { className: 'fk-row' }, e('span', { className: 'fk-name' }, '补充指令'), e('input', { className: 'fk-search fk-grow', defaultValue: base.instructions || '', onBlur: (ev) => { if (ev.target.value !== (base.instructions || '')) 改({ base: { instructions: ev.target.value } }) } }))),
+          e('div', { className: 'fk-row' }, e('span', { className: 'fk-name' }, '补充指令'), e('input', { className: 'fk-search fk-grow', defaultValue: base.instructions || '', onBlur: (ev) => { if (ev.target.value !== (base.instructions || '')) 改({ base: { instructions: ev.target.value } }) } })),
+          e('div', { className: 'fk-row' }, e('span', { className: 'fk-name' }, '回复风格'), e('input', { className: 'fk-search fk-grow', defaultValue: base.style || '', onBlur: (ev) => { if (ev.target.value !== (base.style || '')) 改({ base: { style: ev.target.value } }) } }))),
         e('div', { className: 'fk-flat' },
           e('div', { style: { flex: 2 } },
             e('div', { className: 'fk-win', style: { height: 160, overflow: 'auto' } },
@@ -357,7 +360,7 @@ window.__ModuleLoader__.load({
       useEffect(() => {
         void fetch('/dsh-fishsoul/changelog').then((r) => r.json()).then((d) => { if (d && d.ok) set记录(String(d.文 || '')) }).catch(() => {})
       }, [])
-      const 正文 = 记录.replace(/^# .*\n+/, '')
+      const 正文 = 记录.replace(/^# .*\n+/, '').trim().replace(/^## /, '')
       const 段 = 正文.split(/\n## /).filter(Boolean).map((x) => x.trim())
       return e('div', null,
         e('div', { className: 'fk-doc-title', style: { margin: '2px 0 8px' } }, '更新历史'),
@@ -414,7 +417,7 @@ window.__ModuleLoader__.load({
       return e('div', { className: 'fk-wrap' },
         e('div', { className: 'fk-top' },
           e('span', { className: 'fk-brand' }, '小肥鱼 · 人格'),
-          e('span', { className: 'fk-ver' }, 'v' + VERSION),
+          e('span', { className: 'fk-ver' }, 'v' + ((状态 && 状态.版本) || VERSION)),
           e('span', { className: 'fk-grow' }),
           e('button', { className: 'fk-btn', onClick: 备份, title: '把当前档案备份一份（带校验码）' }, '备份'),
           e('button', { className: 'fk-btn', onClick: () => {
