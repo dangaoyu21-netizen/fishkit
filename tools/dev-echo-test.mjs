@@ -170,5 +170,18 @@ rmSync(目录, { recursive: true, force: true })
   }
 })
 
+说('== 等太久的回复（超时兜底）==')
+const 会2 = { id: 'session-超时' }
+回声.吃事件(会2, 助手(30, '说完了，等你回话。'))
+回声.吃事件(会2, 轮完(30))
+查('刚说完不急着结算', () => { assert.equal(回声.结算超时的().length, 0) })
+回声.待回声.get('session-超时').at = Date.now() - 3 * 3600 * 1000
+const 老的 = 回声.结算超时的()
+查('三小时后当没接结算掉', () => {
+  assert.equal(老的.length, 1)
+  assert.equal(老的[0].outcome, 'silence')
+})
+查('结算完就清掉了', () => { assert.equal(回声.待回声.has('session-超时'), false) })
+
 说('')
 说(process.exitCode ? '✗ 有没过的' : '✅ 全过（' + 过 + ' 项）')
