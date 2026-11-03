@@ -300,10 +300,12 @@ window.__ModuleLoader__.load({
 
     // ── 成长页（2026-11-03）：认知、起点、环境、兴趣、回顾 ──
     // 这一页都是它自己长出来的，不是设出来的，所以只有「看」，没有「改」。
+    // 起点和环境指纹不进窗口了（2026-11-03 老大定的）：鱼自己读得到就行，
+    // 有人问它「初始怎么设的」，让它自己讲。
     const 成长页 = ({ 状态 }) => {
       const 认 = 状态.cognition || []
-      const 起 = 状态.origin || {}
-      const 环 = 状态.environment || null
+
+
       const 兴 = (状态.interests || []).slice().sort((a, b) => Number(b.分 || 0) - Number(a.分 || 0))
       const 回 = 状态.reflection || null
       const 一条 = (键, 左, 右, 值) => e('div', { key: 键, className: 'fk-row' },
@@ -318,16 +320,6 @@ window.__ModuleLoader__.load({
           认.length === 0
             ? e('div', { className: 'fk-note' }, '还没长出来')
             : 认.map((d) => 一条(d.key, d.left, d.right, d.value))),
-        e('div', { className: 'fk-card' },
-          e('div', { className: 'fk-row' }, e('span', { className: 'fk-name' }, '起点')),
-          e('div', { className: 'fk-win' }, 起.seed ? 起.seed : '（还没写，等它自己写一句）'),
-          起.firstMeet && 起.firstMeet.firstWords
-            ? e('div', { className: 'fk-note' }, '第一次见面：' + 起.firstMeet.firstWords)
-            : null),
-        e('div', { className: 'fk-card' },
-          e('div', { className: 'fk-row' }, e('span', { className: 'fk-name' }, '它待在哪儿')),
-          e('div', { className: 'fk-win' },
-            环 ? [环.平台, 环.时段, (环.常聊 || []).join('、')].filter(Boolean).join('｜') : '（还没采）')),
         e('div', { className: 'fk-card' },
           e('div', { className: 'fk-row' }, e('span', { className: 'fk-name' }, '兴趣')),
           兴.length === 0
@@ -444,8 +436,13 @@ window.__ModuleLoader__.load({
                 },
               }),
               e('span', { className: 'fk-grow', title: a.标识 || '' },
-                (a.昵称 ? a.昵称 : '（还没验过）') + '　' + (a.状态 || '') +
-                (a.更新时间 ? '　' + String(a.更新时间).slice(0, 10) : '')),
+                (a.昵称 ? a.昵称 + '　' : ''),
+                e('span', {
+                  style: {
+                    color: a.有效 === 1 ? '#3fa34d' : '#d04040', // 已验证绿；未验证 / 失效红
+                    fontWeight: 600,
+                  },
+                }, a.状态 || '未验证')),
               a.已登录
                 ? e('button', {
                     className: 'fk-btn', title: '联网看看这个账号还能不能用', onClick: (ev) => {
