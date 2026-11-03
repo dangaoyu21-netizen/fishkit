@@ -5,7 +5,7 @@ import assert from 'node:assert/strict'
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { 建检索, 拆词, 半衰天数, 默认条数 } from '../lib/recall.js'
+import { 建检索, 拆词, 半衰天数, 默认条数, 归组 } from '../lib/recall.js'
 
 const 说 = (s) => process.stdout.write(s + '\n')
 let 过 = 0
@@ -88,6 +88,22 @@ const 句 = 重检索.拼注入('同一句话', { 相关条数: 2, 最近条数:
 说('== 常数 ==')
 查('半衰 30 天', () => { assert.equal(半衰天数, 30) })
 查('默认 6 条', () => { assert.equal(默认条数, 6) })
+
+说('== 同义词 ==')
+查('归组认得近义词', () => {
+  assert.equal(归组('重起'), 归组('重启'))
+  assert.equal(归组('谎报'), 归组('假报'))
+})
+查('不认识的词原样返回', () => { assert.equal(归组('鸡汤'), '鸡汤') })
+
+说('== 错题本也一起翻 ==')
+writeFileSync(join(目录, 'memory', 'mistakes.jsonl'), JSON.stringify({
+  id: 'm-x', kind: 'mistake', time: '2026-11-01T10:00:00+08:00',
+  title: '报了假的重启', symptom: '说已重启，其实一次都没重启', fix: '重启完先验一遍', lesson: '敲了命令不等于事情发生', status: '已修',
+}) + '\n', 'utf8')
+const 错题果 = 建检索({ 根: 目录 }).找('重启 假报', { 条数: 3, 现在 })
+说('  找到：' + 错题果.map((x) => (x._错题 ? '【错题】' : '') + String(x.summary).slice(0, 18)).join(' / '))
+查('错题能被翻出来', () => { assert.ok(错题果.some((x) => x._错题)) })
 
 rmSync(目录, { recursive: true, force: true })
 说('')

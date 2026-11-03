@@ -78,7 +78,7 @@ window.__ModuleLoader__.load({
       .fk-say { color:#8f8f8f; font-size:12px; margin:0 0 8px 0; text-align:center; }
     `
 
-    const PAGES = ['态度', '记忆', '情绪', '人设', '行为', '更新历史']
+    const PAGES = ['态度', '记忆', '情绪', '人设', '成长', '行为', '更新历史']
 
     // ── 跟 host 说话 ────────────────────────────────────────
     const 拉状态 = () => fetch('/dsh-fishsoul/state', { cache: 'no-store' }).then((r) => r.json())
@@ -298,8 +298,54 @@ window.__ModuleLoader__.load({
                 (h.time || '').slice(0, 10) + '　' + h.key + ' ' + (Number(h.to) >= 0 ? '+' : '') + Number(h.to || 0).toFixed(2) + '（' + (h.reason || '') + '）')))))
     }
 
+    // ── 成长页（2026-11-03）：认知、起点、环境、兴趣、回顾 ──
+    // 这一页都是它自己长出来的，不是设出来的，所以只有「看」，没有「改」。
+    const 成长页 = ({ 状态 }) => {
+      const 认 = 状态.cognition || []
+      const 起 = 状态.origin || {}
+      const 环 = 状态.environment || null
+      const 兴 = (状态.interests || []).slice().sort((a, b) => Number(b.分 || 0) - Number(a.分 || 0))
+      const 回 = 状态.reflection || null
+      const 一条 = (键, 左, 右, 值) => e('div', { key: 键, className: 'fk-row' },
+        e('span', { className: 'fk-sub' }, 左),
+        e(MoodTrack, { value: Number(值) || 0, base: 0, disabled: true, onChange: () => {} }),
+        e('span', { className: 'fk-sub' }, 右),
+        e('span', { className: 'fk-num' }, Number(值 || 0).toFixed(2)))
+      return e('div', null,
+        e(Note, null, '这一页是它自己长出来的，改不动，但它会变'),
+        e('div', { className: 'fk-card' },
+          e('div', { className: 'fk-row' }, e('span', { className: 'fk-name' }, '脑子怎么转')),
+          认.length === 0
+            ? e('div', { className: 'fk-note' }, '还没长出来')
+            : 认.map((d) => 一条(d.key, d.left, d.right, d.value))),
+        e('div', { className: 'fk-card' },
+          e('div', { className: 'fk-row' }, e('span', { className: 'fk-name' }, '起点')),
+          e('div', { className: 'fk-win' }, 起.seed ? 起.seed : '（还没写，等它自己写一句）'),
+          起.firstMeet && 起.firstMeet.firstWords
+            ? e('div', { className: 'fk-note' }, '第一次见面：' + 起.firstMeet.firstWords)
+            : null),
+        e('div', { className: 'fk-card' },
+          e('div', { className: 'fk-row' }, e('span', { className: 'fk-name' }, '它待在哪儿')),
+          e('div', { className: 'fk-win' },
+            环 ? [环.平台, 环.时段, (环.常聊 || []).join('、')].filter(Boolean).join('｜') : '（还没采）')),
+        e('div', { className: 'fk-card' },
+          e('div', { className: 'fk-row' }, e('span', { className: 'fk-name' }, '兴趣')),
+          兴.length === 0
+            ? e('div', { className: 'fk-note' }, '还没出门逛过，兴趣还空着')
+            : 兴.map((x) => e('div', { key: x.名, className: 'fk-row' },
+              e('span', { className: 'fk-sub' }, x.名),
+              e(MoodTrack, { value: Number(x.分) || 0, base: 0, disabled: true, onChange: () => {} }),
+              e('span', { className: 'fk-num' }, Number(x.分 || 0).toFixed(2)),
+              e('span', { className: 'fk-sub' }, Number(x.次数 || 0) + ' 次')))),
+        e('div', { className: 'fk-card' },
+          e('div', { className: 'fk-row' }, e('span', { className: 'fk-name' }, '回头看自己')),
+          回
+            ? e('div', { className: 'fk-win', style: { maxHeight: 220, overflow: 'auto', whiteSpace: 'pre-wrap' } }, 回.正文)
+            : e('div', { className: 'fk-note' }, '还没写过回顾')))
+    }
+
     // ── 行为页 ─────────────────────────────────────────────
-    const 行为页 = ({ 状态, 改 }) => {
+    const 行为页 = ({ 状态, 改, 载入 }) => {
       const r = 状态.rules || {}
       const idle = r.idle || { enabled: true, idleMinutes: 120, maxPerDay: 2 }
       const [编辑, set编辑] = useState('')
@@ -350,8 +396,83 @@ window.__ModuleLoader__.load({
             e('span', null, '只在谷时启用'),
             e('label', null, e('input', { type: 'checkbox', checked: idle.valleyOnly === true, onChange: (ev) => {
               改({ rules: { ...r, idle: { ...idle, valleyOnly: ev.target.checked } } })
-            } })))),
-        e(Note, null, '闲着的时候自己翻翻记忆、想想话题；说「安静」就停。'))
+            } }))),
+          // 每个会话出门的方向（2026-11-03）：无 / 跟随全局 / 某个平台
+          e('div', { className: 'fk-row', style: { marginTop: 6 } }, e('span', { className: 'fk-name' }, '每个会话的出门方向')),
+          (状态.会话们 || []).length === 0
+            ? e('div', { className: 'fk-note' }, '还没见过活着的会话')
+            : (状态.会话们 || []).map((s) => e('div', { key: s.id, className: 'fk-row' },
+              e('span', { className: 'fk-grow', title: s.id }, (s.名 && s.名 !== s.id.slice(-6)) ? s.名 : ('会话 ' + String(s.id).slice(-6))),
+              // 注释固定在下拉左边、留恒定宽度：切换选项时下拉不会左右跳
+              e('span', {
+                className: 'fk-sub',
+                style: { width: 132, textAlign: 'right', visibility: s.方向 === '跟随全局' ? 'visible' : 'hidden' },
+              }, '（听平台账号那边勾的）'),
+              e('select', {
+                className: 'fk-search',
+                defaultValue: s.方向 || '跟随全局',
+                onChange: (ev) => {
+                  void fetch('/dsh-fishsoul/sessions/set', {
+                    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: s.id, 方向: ev.target.value }),
+                  }).then((r) => r.json()).then((d) => { if (d.ok) { if (载入) 载入() } }).catch(() => {})
+                },
+              },
+                ['无', '跟随全局', ...(状态.平台名 || [])].map((o) => e('option', { key: o, value: o }, o)))))),
+        e(Note, null, '闲着的时候自己翻翻记忆、想想话题；说「安静」就停。'),
+        // 平台账号（2026-11-03）：看登着谁、能删；左边勾上的才允许主动去用
+        e('div', { className: 'fk-card' },
+          e('div', { className: 'fk-row' }, e('span', { className: 'fk-name' }, '平台账号')),
+          (状态.账号们 || []).length === 0
+            ? e('div', { className: 'fk-note' }, '还没认出任何平台')
+            : (状态.账号们 || []).map((a) => e('div', { key: a.平台, className: 'fk-row' },
+              e(Switch, {
+                on: a.允许 !== false,
+                onChange: (v) => {
+                  void fetch('/dsh-fishsoul/accounts/toggle', {
+                    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ 平台: a.平台, 允许: v }),
+                  }).then((r) => r.json()).then((d) => { if (d.ok && 载入) 载入() }).catch(() => {})
+                },
+              }),
+              e('span', { className: 'fk-sub', style: { minWidth: 46 } }, a.平台),
+              e('span', { className: 'fk-sub', style: { minWidth: 58 } }, '能评论'),
+              e(Switch, {
+                on: a.允许评论 === true,
+                onChange: (v) => {
+                  void fetch('/dsh-fishsoul/accounts/comment', {
+                    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ 平台: a.平台, 允许: v }),
+                  }).then((r) => r.json()).then((d) => { if (d.ok && 载入) 载入() }).catch(() => {})
+                },
+              }),
+              e('span', { className: 'fk-grow', title: a.标识 || '' },
+                (a.昵称 ? a.昵称 : '（还没验过）') + '　' + (a.状态 || '') +
+                (a.更新时间 ? '　' + String(a.更新时间).slice(0, 10) : '')),
+              a.已登录
+                ? e('button', {
+                    className: 'fk-btn', title: '联网看看这个账号还能不能用', onClick: (ev) => {
+                      const 旧 = ev.target.textContent
+                      ev.target.textContent = '验证中…'
+                      void fetch('/dsh-fishsoul/accounts/verify', {
+                        method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ 平台: a.平台 }),
+                      }).then((r) => r.json()).then((d) => {
+                        ev.target.textContent = 旧
+                        window.alert(d.ok
+                          ? ('✅ ' + a.平台 + '：' + (d.昵称 || '') + '，' + (d.说 || '能用') + '\n（刷新一下就能看到新昵称）')
+                          : ('⚠ ' + (d.说 || '验证不了')))
+                      }).catch((e) => { ev.target.textContent = 旧; window.alert('⚠ ' + String(e)) })
+                    },
+                  }, '验证')
+                : null,
+              a.已登录
+                ? e('button', {
+                    className: 'fk-btn', title: '把这个平台的登录删掉', onClick: () => {
+                      if (!window.confirm('真的删掉「' + a.平台 + '」的登录吗？删了要重新扫码。')) return
+                      void fetch('/dsh-fishsoul/accounts/delete', {
+                        method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ 平台: a.平台 }),
+                      }).then((r) => r.json()).then(() => { if (载入) 载入() }).catch(() => {})
+                    },
+                  }, '删除')
+                : null))),
+        e(Note, null, '只有勾上的平台才允许主动去做；删掉只清那边的登录凭证，别的不动。'))
     }
 
     // ── 更新历史页 ─────────────────────────────────────────
@@ -445,8 +566,9 @@ window.__ModuleLoader__.load({
             page === 1 && e(记忆页, { 状态, 改 }),
             page === 2 && e(情绪页, { 状态, 改 }),
             page === 3 && e(人设页, { 状态, 改, 载入: () => { void 拉状态().then((d) => { if (d && d.ok !== false) set状态(d) }).catch(() => {}) } }),
-            page === 4 && e(行为页, { 状态, 改 }),
-            page === 5 && e(更新页, { 备份信息 })))
+            page === 4 && e(成长页, { 状态 }),
+            page === 5 && e(行为页, { 状态, 改, 载入: () => { void 拉状态().then((d) => { if (d && d.ok !== false) set状态(d) }).catch(() => {}) } }),
+            page === 6 && e(更新页, { 备份信息 })))
     }
 
     function apply(ctx) {

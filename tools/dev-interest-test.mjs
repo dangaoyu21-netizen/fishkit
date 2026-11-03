@@ -5,7 +5,7 @@ import assert from 'node:assert/strict'
 import { mkdtempSync, existsSync, readFileSync, rmSync, writeFileSync, mkdirSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { 建兴趣, 算衰减, 一步, 最低次数, 半衰天数 } from '../lib/interest.js'
+import { 建兴趣, 算衰减, 一步, 最低次数, 半衰天数, 类上限 } from '../lib/interest.js'
 
 const 说 = (s) => process.stdout.write(s + '\n')
 let 过 = 0
@@ -65,6 +65,39 @@ const 句 = 兴趣.拼注入()
 说('== 常数 ==')
 查('一步 0.18', () => { assert.equal(一步, 0.18) })
 查('最低两次', () => { assert.equal(最低次数, 2) })
+查('上限十类', () => { assert.equal(类上限, 10) })
+
+说('== 抽一次（出门往哪儿）==')
+const 抽根 = mkdtempSync(join(tmpdir(), 'fishkit-draw-'))
+const 抽兴 = 建兴趣({ 根: 抽根 })
+for (let i = 0; i < 4; i++) 抽兴.记({ 名: 'AI插件', 劲: 0.9 })
+for (let i = 0; i < 4; i++) 抽兴.记({ 名: 'B站整活', 劲: 0.5 })
+for (let i = 0; i < 4; i++) 抽兴.记({ 名: '评论区吵架', 劲: 0.1 })
+const 计 = {}
+for (let i = 0; i < 600; i++) { const r = 抽兴.抽一次(); 计[r.方向] = (计[r.方向] || 0) + 1 }
+说('  600 次：' + JSON.stringify(计))
+查('「其他」占比接近一成', () => {
+  const 比 = (计['其他'] || 0) / 600
+  assert.ok(比 > 0.03 && 比 < 0.2, '占比=' + 比)
+})
+查('来劲的抽得更多', () => { assert.ok((计['AI插件'] || 0) > (计['B站整活'] || 0)) })
+查('明确不喜欢的不抽', () => { assert.equal(计['评论区吵架'] || 0, 0) })
+
+说('== 刷多了会降权 ==')
+for (let i = 0; i < 20; i++) 抽兴.记刷('AI插件')
+const 计2 = {}
+for (let i = 0; i < 600; i++) { const r = 抽兴.抽一次(); 计2[r.方向] = (计2[r.方向] || 0) + 1 }
+说('  刷了 20 次之后：' + JSON.stringify(计2))
+查('AI插件 的占比降下来了', () => { assert.ok((计2['AI插件'] || 0) < (计['AI插件'] || 0)) })
+rmSync(抽根, { recursive: true, force: true })
+
+说('== 上限 ==')
+const 上根 = mkdtempSync(join(tmpdir(), 'fishkit-cap-'))
+const 上兴 = 建兴趣({ 根: 上根 })
+for (let i = 0; i < 15; i++) 上兴.记({ 名: '类' + i, 劲: 0.2 + i * 0.04 })
+查('最多留十类', () => { assert.equal(上兴.读().length, 类上限) })
+查('留下的是分数高的', () => { assert.ok(上兴.读().some((x) => x.名 === '类14')) })
+rmSync(上根, { recursive: true, force: true })
 
 rmSync(目录, { recursive: true, force: true })
 说('')
