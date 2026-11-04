@@ -576,15 +576,28 @@ window.__ModuleLoader__.load({
       const [转数, set转数] = useState(0)
       // 2026-11-04：切得快的时候，前一个平台的答案会贴到后一个下面 —— 记住现在选的是谁
       const 选Ref = useRef('')
+      // 查过就记住，切回来别又跑去问一遍（一分钟内算数，点按钮才强制重查）
+      const 缓存 = useRef(new Map())
+      const 写缓存 = (名, d) => { 缓存.current.set(名, { 数据: d, 时间: Date.now() }) }
       const 此 = (平台表 || []).find((x) => x.名 === 选) || null
 
-      const 查某个 = (名, 安静) => {
+      const 查某个 = (名, 安静, 强制) => {
         if (!名) return
+        if (!强制) {
+          const 旧 = 缓存.current.get(名)
+          if (旧 && Date.now() - 旧.时间 < 60000) {
+            set检查(旧.数据)
+            if (!安静) set说(旧.数据.已装 ? '这套库在机器上，能动' : (旧.数据.说 || '还没装'))
+            if (旧.数据.装 && 旧.数据.装.状态 === '装中') set装中(true)
+            return
+          }
+        }
         if (!安静) { set忙(true); set说('在查…') }
         void fetch('/dsh-fishsoul/platforms/check', {
           method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ 平台: 名 }),
         }).then((r) => r.json()).then((d) => {
           if (选Ref.current !== 名) return // 人已经切走了，这份答案不是他的
+          写缓存(名, d)
           set检查(d)
           // 后端还在装的话，接着轮询（切回来也能看见进度）
           if (d.装 && d.装.状态 === '装中') set装中(true)
@@ -601,6 +614,7 @@ window.__ModuleLoader__.load({
             method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ 平台: 选 }),
           }).then((r) => r.json()).then((d) => {
             if (!活) return
+            写缓存(选, d)
             set检查(d)
             if (d.已装) { set装中(false); set说('装好了') }
             else if (d.装 && d.装.状态 === '失败') { set装中(false); set说('装失败了：' + (d.装.说 || '去看日志')) }
@@ -623,6 +637,7 @@ window.__ModuleLoader__.load({
           method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ 平台: 此.名 }),
         }).then((r) => r.json()).then((d) => {
           set说(d.说 || '开始装了')
+          缓存.current.delete(此.名) // 开始装了，之前那条「未安装」作废
           set转数(0)
           set装中(true)
         }).catch(() => set说('没发出去')).finally(() => set忙(false))
@@ -670,7 +685,7 @@ window.__ModuleLoader__.load({
               e('span', { className: 'fk-sub' }, '依赖'),
               e('span', { style: { color: 态色, fontWeight: 600 } }, 态)),
             e('div', { className: 'fk-row' },
-              e('button', { className: 'fk-btn', disabled: 忙 || 装中, onClick: () => 查某个(选) }, '检查依赖'),
+              e('button', { className: 'fk-btn', disabled: 忙 || 装中, onClick: () => 查某个(选, false, true) }, '检查依赖'),
               e('button', { className: 'fk-btn', disabled: 忙 || 装中 || (检查 && 检查.已装 === true), onClick: 装 }, 装中 ? '正在安装…' : '装一下')),
             e('div', { className: 'fk-note', style: { textAlign: 'left' } }, 说))
           : e('div', { className: 'fk-note' }, '先选个平台吧'))
