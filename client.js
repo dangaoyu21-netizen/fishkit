@@ -340,8 +340,11 @@ window.__ModuleLoader__.load({
     const 行为页 = ({ 状态, 改, 载入 }) => {
       const r = 状态.rules || {}
       const idle = r.idle || { enabled: true, idleMinutes: 120, maxPerDay: 2 }
-      const [编辑, set编辑] = useState('')
-      // 2026-11-04 老大要的：两块规矩改成各一个多行框，一行一条。      //   「群聊规矩 / 其他规矩」这个分法保留；加规矩只要多写一行，不用动代码。
+      // 「添加账号」那个子窗口开没开、平台表 —— 都归这一页自己管（2026-11-04 修）
+      const [加号, set加号] = useState(false)
+      const [平台表, set平台表] = useState([])
+      // 2026-11-04 老大要的：两块规矩改成各一个多行框，一行一条。
+      //   「群聊规矩 / 其他规矩」这个分法保留；加规矩只要多写一行，不用动代码。
       const 群组 = ['no-politic-scandals', 'repeat-hiss', 'group-five-seconds']
       const 群们 = (r.rules || []).filter((x) => 群组.includes(x.id))
       const 别的们 = (r.rules || []).filter((x) => !群组.includes(x.id))
@@ -571,6 +574,8 @@ window.__ModuleLoader__.load({
       const [忙, set忙] = useState(false)
       const [装中, set装中] = useState(false)
       const [转数, set转数] = useState(0)
+      // 2026-11-04：切得快的时候，前一个平台的答案会贴到后一个下面 —— 记住现在选的是谁
+      const 选Ref = useRef('')
       const 此 = (平台表 || []).find((x) => x.名 === 选) || null
 
       const 查某个 = (名, 安静) => {
@@ -579,9 +584,12 @@ window.__ModuleLoader__.load({
         void fetch('/dsh-fishsoul/platforms/check', {
           method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ 平台: 名 }),
         }).then((r) => r.json()).then((d) => {
+          if (选Ref.current !== 名) return // 人已经切走了，这份答案不是他的
           set检查(d)
+          // 后端还在装的话，接着轮询（切回来也能看见进度）
+          if (d.装 && d.装.状态 === '装中') set装中(true)
           if (!安静) set说(d.已装 ? '这套库在机器上，能动' : (d.说 || '还没装'))
-        }).catch((error) => { if (!安静) set说('查不了：' + String(error)) }).finally(() => { if (!安静) set忙(false) })
+        }).catch((error) => { if (选Ref.current === 名 && !安静) set说('查不了：' + String(error)) }).finally(() => { if (选Ref.current === 名 && !安静) set忙(false) })
       }
 
       // 装是后台跑的，这里每 2.5 秒问一次，问到「好了 / 失败了」就停
@@ -624,6 +632,7 @@ window.__ModuleLoader__.load({
       const 态 = 装中 ? '正在安装'
         : !检查 ? '未安装'
         : 检查.已装 ? '已安装'
+        : (检查.装 && 检查.装.状态 === '装中') ? '正在安装'
         : (检查.装 && 检查.装.状态 === '失败') ? '安装失败'
         : '未安装'
       const 态色 = 态 === '已安装' ? '#3fa34d' : 态 === '正在安装' ? '#c9963a' : 态 === '安装失败' ? '#d04040' : 'inherit'
@@ -639,9 +648,12 @@ window.__ModuleLoader__.load({
             defaultValue: '',
             onChange: (ev) => {
               const v = ev.target.value
+              选Ref.current = v
               set选(v)
               set检查(null)
               set说('')
+              set装中(false) // 切走就把上一条的进度放掉，别挂在新条目下面
+              set转数(0)
               if (v) 查某个(v)
             },
           },
@@ -671,8 +683,6 @@ window.__ModuleLoader__.load({
       const [错, set错] = useState(null)
       const [备份信息, set备份信息] = useState('')
       const [更新信息, set更新信息] = useState('')
-      const [加号, set加号] = useState(false)
-      const [平台表, set平台表] = useState([])
       const 防抖 = use保存()
 
       useEffect(() => {
