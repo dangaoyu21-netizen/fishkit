@@ -341,28 +341,51 @@ window.__ModuleLoader__.load({
       const r = 状态.rules || {}
       const idle = r.idle || { enabled: true, idleMinutes: 120, maxPerDay: 2 }
       const [编辑, set编辑] = useState('')
-      const 存规则 = (id, text) => {
-        改({ rules: { ...r, rules: (r.rules || []).map((y) => (y.id === id ? { ...y, text: String(text || y.text) } : y)) } })
+      // 2026-11-04 老大要的：两块规矩改成各一个多行框，一行一条。      //   「群聊规矩 / 其他规矩」这个分法保留；加规矩只要多写一行，不用动代码。
+      const 群组 = ['no-politic-scandals', 'repeat-hiss', 'group-five-seconds']
+      const 群们 = (r.rules || []).filter((x) => 群组.includes(x.id))
+      const 别的们 = (r.rules || []).filter((x) => !群组.includes(x.id))
+      const 拼文本 = (列) => (列 || []).map((x) => x.text).join('\n')
+      /** 这一块按行切开：能对上的沿用老 id（别把开关丢了），对不上的当新加的 */
+      const 存块 = (旧们, 文本) => {
+        const 行们 = String(文本 || '').split(/\r?\n/).map((s) => s.trim()).filter(Boolean)
+        const 旧按文 = new Map((旧们 || []).map((x) => [String(x.text).trim(), x]))
+        const 新们 = 行们.map((行, i) => {
+          const 命中 = 旧按文.get(行)
+          return 命中 ? { ...命中, text: 行 } : { id: '自定-' + Date.now().toString(36) + '-' + i, text: 行, enabled: true }
+        })
+        // 新加的替回原来的位置，别把顺序打乱
+        const 旧id = new Set((旧们 || []).map((x) => x.id))
+        let 游标 = 0
+        const 合并 = []
+        for (const x of (r.rules || [])) {
+          if (旧id.has(x.id)) {
+            if (游标 < 新们.length) 合并.push(新们[游标++])
+          } else 合并.push(x)
+        }
+        while (游标 < 新们.length) 合并.push(新们[游标++])
+        改({ rules: { ...r, rules: 合并 } })
       }
-      const 渲染规则 = (x) => 编辑 === x.id
-        ? e('input', {
-            className: 'fk-search', style: { width: '100%' }, defaultValue: x.text, autoFocus: true,
-            onBlur: (ev) => { 存规则(x.id, ev.target.value); set编辑('') },
-            onKeyDown: (ev) => { if (ev.key === 'Enter') ev.target.blur() },
-          })
-        : e('div', { key: x.id, title: '点一下改', style: { cursor: 'pointer' }, onClick: () => set编辑(x.id) }, '· ' + x.text)
       return e('div', null,
         e('div', { className: 'fk-switch-row' }, e('span', { className: 'fk-name' }, '行为'), e(Switch, { on: (状态.manifest && 状态.manifest.modules && 状态.manifest.modules.behavior) !== false, onChange: (v) => 改({ manifest: { ...(状态.manifest || {}), modules: { ...((状态.manifest || {}).modules || {}), behavior: v } } }) })),
         e('div', { className: 'fk-card' },
           e('div', { className: 'fk-row' }, e('span', { className: 'fk-name' }, '群聊规矩')),
-          e('div', { className: 'fk-win', style: { maxHeight: 150, overflow: 'auto' } },
-            (r.rules || []).filter((x) => ['no-politic-scandals', 'repeat-hiss', 'group-five-seconds'].includes(x.id))
-              .map((x) => 渲染规则(x)))),
+          e('textarea', {
+            className: 'fk-search',
+            style: { width: '100%', minHeight: 76, resize: 'vertical', lineHeight: 1.6, fontFamily: 'inherit' },
+            defaultValue: 拼文本(群们),
+            onBlur: (ev) => 存块(群们, ev.target.value),
+          }),
+          e('div', { className: 'fk-note', style: { textAlign: 'left' } }, '一行一条')),
         e('div', { className: 'fk-card' },
           e('div', { className: 'fk-row' }, e('span', { className: 'fk-name' }, '其他规矩')),
-          e('div', { className: 'fk-win', style: { maxHeight: 100, overflow: 'auto' } },
-            (r.rules || []).filter((x) => !['no-politic-scandals', 'repeat-hiss', 'group-five-seconds'].includes(x.id))
-              .map((x) => 渲染规则(x)))),
+          e('textarea', {
+            className: 'fk-search',
+            style: { width: '100%', minHeight: 76, resize: 'vertical', lineHeight: 1.6, fontFamily: 'inherit' },
+            defaultValue: 拼文本(别的们),
+            onBlur: (ev) => 存块(别的们, ev.target.value),
+          }),
+          e('div', { className: 'fk-note', style: { textAlign: 'left' } }, '一行一条')),
         e('div', { className: 'fk-switch-row' }, e('span', { className: 'fk-name' }, '主动找事做'), e(Switch, { on: idle.enabled !== false, onChange: (v) => 改({ rules: { ...r, idle: { ...idle, enabled: v } } }) })),
         e('div', { className: 'fk-card' },
           e('div', { className: 'fk-row' },
@@ -389,31 +412,54 @@ window.__ModuleLoader__.load({
             e('label', null, e('input', { type: 'checkbox', checked: idle.valleyOnly === true, onChange: (ev) => {
               改({ rules: { ...r, idle: { ...idle, valleyOnly: ev.target.checked } } })
             } }))),
-          // 每个会话出门的方向（2026-11-03）：无 / 跟随全局 / 某个平台
-          e('div', { className: 'fk-row', style: { marginTop: 6 } }, e('span', { className: 'fk-name' }, '每个会话的出门方向')),
+          // 每个会话：开不开「主动找事做」＋出门的方向（2026-11-04 加了开关、限高五行）
+          e('div', { className: 'fk-row', style: { marginTop: 6 } }, e('span', { className: 'fk-name' }, '每个会话的主动找事做')),
           (状态.会话们 || []).length === 0
             ? e('div', { className: 'fk-note' }, '还没见过活着的会话')
-            : (状态.会话们 || []).map((s) => e('div', { key: s.id, className: 'fk-row' },
-              e('span', { className: 'fk-grow', title: s.id }, (s.名 && s.名 !== s.id.slice(-6)) ? s.名 : ('会话 ' + String(s.id).slice(-6))),
-              // 注释固定在下拉左边、留恒定宽度：切换选项时下拉不会左右跳
-              e('span', {
-                className: 'fk-sub',
-                style: { width: 132, textAlign: 'right', visibility: s.方向 === '跟随全局' ? 'visible' : 'hidden' },
-              }, '（听平台账号那边勾的）'),
-              e('select', {
-                className: 'fk-search',
-                defaultValue: s.方向 || '跟随全局',
-                onChange: (ev) => {
-                  void fetch('/dsh-fishsoul/sessions/set', {
-                    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: s.id, 方向: ev.target.value }),
-                  }).then((r) => r.json()).then((d) => { if (d.ok) { if (载入) 载入() } }).catch(() => {})
+            // ⚠ 限高：一屏只露五行，多了在框里滚（老大 2026-11-04 要的）
+            : e('div', { className: 'fk-win', style: { maxHeight: 5 * 34, overflowY: 'auto' } },
+              (状态.会话们 || []).map((s) => e('div', { key: s.id, className: 'fk-row' },
+                e(Switch, {
+                  on: s.开着 !== false,
+                  onChange: (v) => {
+                    void fetch('/dsh-fishsoul/sessions/toggle', {
+                      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: s.id, 开着: v }),
+                    }).then((r) => r.json()).then((d) => { if (d.ok) { if (载入) 载入() } }).catch(() => {})
+                  },
+                }),
+                e('span', { className: 'fk-grow', title: s.id }, (s.名 && s.名 !== s.id.slice(-6)) ? s.名 : ('会话 ' + String(s.id).slice(-6))),
+                // 注释固定在下拉左边、留恒定宽度：切换选项时下拉不会左右跳
+                e('span', {
+                  className: 'fk-sub',
+                  style: { width: 132, textAlign: 'right', visibility: s.方向 === '跟随全局' ? 'visible' : 'hidden' },
+                }, '（听平台账号那边勾的）'),
+                e('select', {
+                  className: 'fk-search',
+                  defaultValue: s.方向 || '跟随全局',
+                  onChange: (ev) => {
+                    void fetch('/dsh-fishsoul/sessions/set', {
+                      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: s.id, 方向: ev.target.value }),
+                    }).then((r) => r.json()).then((d) => { if (d.ok) { if (载入) 载入() } }).catch(() => {})
+                  },
                 },
-              },
-                ['无', '跟随全局', ...(状态.平台名 || [])].map((o) => e('option', { key: o, value: o }, o)))))),
+                  ['无', '跟随全局', ...(状态.平台名 || [])].map((o) => e('option', { key: o, value: o }, o))))))),
         e(Note, null, '闲着的时候自己翻翻记忆、想想话题；说「安静」就停。'),
         // 平台账号（2026-11-03）：看登着谁、能删；左边勾上的才允许主动去用
         e('div', { className: 'fk-card' },
-          e('div', { className: 'fk-row' }, e('span', { className: 'fk-name' }, '平台账号')),
+          e('div', { className: 'fk-row' },
+            e('span', { className: 'fk-name' }, '平台账号'),
+            // 2026-11-04：右边加个按钮，点开是「添加账号」子窗口（选平台 → 查依赖 → 装）
+            e('button', {
+              className: 'fk-btn',
+              style: { marginLeft: 'auto' },
+              onClick: () => {
+                if (!加号) {
+                  void fetch('/dsh-fishsoul/platforms').then((r) => r.json()).then((d) => { if (d && d.ok) set平台表(d.平台们 || []) }).catch(() => {})
+                }
+                set加号(!加号)
+              },
+            }, 加号 ? '收起' : '+ 添加账号')),
+          加号 ? e(添加账号窗, { 平台表, 关掉: () => set加号(false) }) : null,
           (状态.账号们 || []).length === 0
             ? e('div', { className: 'fk-note' }, '还没认出任何平台')
             : (状态.账号们 || []).map((a) => e('div', { key: a.平台, className: 'fk-row' },
@@ -469,7 +515,27 @@ window.__ModuleLoader__.load({
                     },
                   }, '删除')
                 : null))),
-        e(Note, null, '只有勾上的平台才允许主动去做；删掉只清那边的登录凭证，别的不动。'))
+        e(Note, null, '只有勾上的平台才允许主动去做；删掉只清那边的登录凭证，别的不动。'),
+        // 搬旧数据（2026-11-04）：插件不认格式表，只把一条指令递给它，让它自己扫、自己列预览
+        e('div', { className: 'fk-card' },
+          e('div', { className: 'fk-row' }, e('span', { className: 'fk-name' }, '搬旧数据')),
+          e('div', { className: 'fk-note', style: { textAlign: 'left' } },
+            '从别的插件搬记忆 / 人设 / 心情过来。它会先扫一遍、列给你看，你说可以才写。'),
+          e('div', { className: 'fk-row' },
+            e('button', {
+              className: 'fk-btn',
+              onClick: (ev) => {
+                const 旧 = ev.target.textContent
+                ev.target.textContent = '跟它说…'
+                void fetch('/dsh-fishsoul/migrate/start', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' })
+                  .then((r) => r.json()).then((d) => {
+                    ev.target.textContent = 旧
+                    window.alert(d.ok ? ('✅ ' + (d.说 || '说了')) : ('⚠ ' + (d.说 || '没发出去')))
+                  }).catch((e2) => { ev.target.textContent = 旧; window.alert('⚠ ' + String(e2)) })
+              },
+            }, '让它去搬')),
+          e('div', { className: 'fk-note', style: { textAlign: 'left' } },
+            '只读旧文件、只追加不覆盖、密码令牌这类不搬。')))
     }
 
     // ── 更新历史页 ─────────────────────────────────────────
@@ -495,6 +561,109 @@ window.__ModuleLoader__.load({
         e('div', { className: 'fk-say' }, 备份信息 || ''))
     }
 
+    // ── 添加账号（子窗口）──────────────────────────────────
+    // 2026-11-04 老大定的：平台账号那一行加个按钮，点开先选平台，
+    //   选完再当场看那套库在不在（库不进包，只在这里按需装）。
+    function 添加账号窗({ 平台表, 关掉 }) {
+      const [选, set选] = useState('')
+      const [检查, set检查] = useState(null)
+      const [说, set说] = useState('')
+      const [忙, set忙] = useState(false)
+      const [装中, set装中] = useState(false)
+      const [转数, set转数] = useState(0)
+      const 此 = (平台表 || []).find((x) => x.名 === 选) || null
+
+      const 查某个 = (名, 安静) => {
+        if (!名) return
+        if (!安静) { set忙(true); set说('在查…') }
+        void fetch('/dsh-fishsoul/platforms/check', {
+          method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ 平台: 名 }),
+        }).then((r) => r.json()).then((d) => {
+          set检查(d)
+          if (!安静) set说(d.已装 ? '这套库在机器上，能动' : (d.说 || '还没装'))
+        }).catch((error) => { if (!安静) set说('查不了：' + String(error)) }).finally(() => { if (!安静) set忙(false) })
+      }
+
+      // 装是后台跑的，这里每 2.5 秒问一次，问到「好了 / 失败了」就停
+      useEffect(() => {
+        if (!装中 || !选) return
+        let 活 = true
+        const 轮 = () => {
+          void fetch('/dsh-fishsoul/platforms/check', {
+            method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ 平台: 选 }),
+          }).then((r) => r.json()).then((d) => {
+            if (!活) return
+            set检查(d)
+            if (d.已装) { set装中(false); set说('装好了') }
+            else if (d.装 && d.装.状态 === '失败') { set装中(false); set说('装失败了：' + (d.装.说 || '去看日志')) }
+            else set转数((n) => n + 1)
+          }).catch(() => {})
+        }
+        const t = setInterval(轮, 2500)
+        return () => { 活 = false; clearInterval(t) }
+      }, [装中, 选])
+
+      // 转太久就收手，别让它一直转
+      useEffect(() => {
+        if (装中 && 转数 > 240) { set装中(false); set说('等太久了，去看看日志吧') }
+      }, [转数, 装中])
+
+      const 装 = () => {
+        if (!此 || 装中) return
+        set忙(true)
+        void fetch('/dsh-fishsoul/platforms/install', {
+          method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ 平台: 此.名 }),
+        }).then((r) => r.json()).then((d) => {
+          set说(d.说 || '开始装了')
+          set转数(0)
+          set装中(true)
+        }).catch(() => set说('没发出去')).finally(() => set忙(false))
+      }
+
+      // 四种状态：未安装 / 正在安装 / 安装失败 / 已安装
+      const 态 = 装中 ? '正在安装'
+        : !检查 ? '未安装'
+        : 检查.已装 ? '已安装'
+        : (检查.装 && 检查.装.状态 === '失败') ? '安装失败'
+        : '未安装'
+      const 态色 = 态 === '已安装' ? '#3fa34d' : 态 === '正在安装' ? '#c9963a' : 态 === '安装失败' ? '#d04040' : 'inherit'
+
+      return e('div', { className: 'fk-win', style: { marginTop: 8 } },
+        e('div', { className: 'fk-row' },
+          e('span', { className: 'fk-name' }, '添加账号'),
+          e('button', { className: 'fk-btn', style: { marginLeft: 'auto' }, onClick: 关掉 }, '收起来')),
+        e('div', { className: 'fk-row' },
+          e('span', { className: 'fk-sub' }, '平台'),
+          e('select', {
+            className: 'fk-search',
+            defaultValue: '',
+            onChange: (ev) => {
+              const v = ev.target.value
+              set选(v)
+              set检查(null)
+              set说('')
+              if (v) 查某个(v)
+            },
+          },
+            e('option', { value: '' }, '选一个'),
+            (平台表 || []).map((p) => e('option', { key: p.名, value: p.名 }, p.名)))),
+        此
+          ? e('div', null,
+            e('div', { className: 'fk-note', style: { textAlign: 'left' } }, 此.能干 || ''),
+            e('div', { className: 'fk-sub', style: { textAlign: 'left' } },
+              '用 ' + 此.包 + '（' + 此.作者 + ' · ' + 此.许可 + '）'),
+            e('div', { className: 'fk-sub', style: { textAlign: 'left', wordBreak: 'break-all' } }, 此.仓库),
+            // 依赖获取状态（2026-11-04）：未安装 / 正在安装 / 安装失败 / 已安装
+            e('div', { className: 'fk-row' },
+              e('span', { className: 'fk-sub' }, '依赖'),
+              e('span', { style: { color: 态色, fontWeight: 600 } }, 态)),
+            e('div', { className: 'fk-row' },
+              e('button', { className: 'fk-btn', disabled: 忙 || 装中, onClick: () => 查某个(选) }, '检查依赖'),
+              e('button', { className: 'fk-btn', disabled: 忙 || 装中 || (检查 && 检查.已装 === true), onClick: 装 }, 装中 ? '正在安装…' : '装一下')),
+            e('div', { className: 'fk-note', style: { textAlign: 'left' } }, 说))
+          : e('div', { className: 'fk-note' }, '先选个平台吧'))
+    }
+
     // ── 设置页 ─────────────────────────────────────────────
     function FishSoulSettings() {
       const [page, setPage] = useState(0)
@@ -502,6 +671,8 @@ window.__ModuleLoader__.load({
       const [错, set错] = useState(null)
       const [备份信息, set备份信息] = useState('')
       const [更新信息, set更新信息] = useState('')
+      const [加号, set加号] = useState(false)
+      const [平台表, set平台表] = useState([])
       const 防抖 = use保存()
 
       useEffect(() => {

@@ -79,6 +79,17 @@ pnpm add dsh-fishkit
 - 加工具：`ctx.tools.register` 的 `parameters` 必须写完整 JSON Schema（别写简写，会 400）。
 - 数据契约：`.fishsoul/docs/schema.md`。
 
+## 用到的第三方工具
+
+平台那点事不自己抠，直接用现成的。下面这些不是本插件写的，作者和仓库在这儿：
+
+| 工具 | 作者 | 许可 | 仓库 | 用来干什么 |
+|---|---|---|---|---|
+| bilibili-api-python | Nemo2011 | GPL-3.0-or-later | <https://github.com/Nemo2011/bilibili-api> | 搜视频、读字幕、翻评论、发评论、私信、动态 |
+| xiaoheihe-cli | AaronZ345 | MIT | <https://github.com/AaronZ345/xiaoheihe-cli> | 小黑盒的游戏记录和短评、社区帖子、评论和楼中楼 |
+
+两个都**不打进安装包**：设置页「平台账号 → 添加账号」里点一下检查依赖，有就跳过，没有才当场装到本机。
+
 ## 许可
 
 MIT
