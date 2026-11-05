@@ -379,6 +379,14 @@ window.__ModuleLoader__.load({
       // 自己的 QQ 通道（2026-11-05）：默认关着，开之前先把旧桥停了
       const [通道说, set通道说] = useState('')
       const [语音说, set语音说] = useState('')
+      const [接口说, set接口说] = useState('')
+      const 查接口 = () => {
+        set接口说('在探…')
+        void fetch('/dsh-fishsoul/qqprobe', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' })
+          .then((r) => r.json()).then((d) => {
+            set接口说(d.在线 ? ('通了：' + (d.昵称 || '') + '（' + (d.号 || '') + '）') : (d.说 || '连不上'))
+          }).catch(() => set接口说('没发出去'))
+      }
       const 查语音 = (装) => {
         set语音说(装 ? '开始装了…' : '在查…')
         void fetch('/dsh-fishsoul/asr', {
@@ -572,6 +580,10 @@ window.__ModuleLoader__.load({
             e('button', { className: 'fk-btn', onClick: () => 调通道({ 开关: true }) }, '开'),
             e('button', { className: 'fk-btn', onClick: () => 调通道({ 开关: false }) }, '关')),
           e('div', { className: 'fk-note', style: { textAlign: 'left' } }, 通道说),
+          e('div', { className: 'fk-row' },
+            e('span', { className: 'fk-name' }, '接口'),
+            e('button', { className: 'fk-btn', onClick: 查接口 }, '查一下')),
+          e('div', { className: 'fk-note', style: { textAlign: 'left' } }, 接口说),
           e('div', { className: 'fk-row' },
             e('span', { className: 'fk-name' }, '语音转文字'),
             e('button', { className: 'fk-btn', onClick: () => 查语音(false) }, '查一下'),
