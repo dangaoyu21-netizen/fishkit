@@ -337,6 +337,13 @@ window.__ModuleLoader__.load({
     }
 
     // ── 行为页 ─────────────────────────────────────────────
+    //
+    //      .-'''-.
+    //    .'  o o  '.
+    //   /      ᵕ    \___
+    //   \           /
+    //    '-.___.-'   `-.
+    //
     const 行为页 = ({ 状态, 改, 载入 }) => {
       const r = 状态.rules || {}
       const idle = r.idle || { enabled: true, idleMinutes: 120, maxPerDay: 2 }
