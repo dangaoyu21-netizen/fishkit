@@ -378,6 +378,7 @@ window.__ModuleLoader__.load({
       }
       // 自己的 QQ 通道（2026-11-05）：默认关着，开之前先把旧桥停了
       const [通道说, set通道说] = useState('')
+      const [通道开, set通道开] = useState(false)
       const [语音说, set语音说] = useState('')
       const [接口说, set接口说] = useState('')
       const 查接口 = () => {
@@ -398,9 +399,17 @@ window.__ModuleLoader__.load({
         set通道说('…')
         void fetch('/dsh-fishsoul/qqlink', {
           method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(体),
-        }).then((r) => r.json()).then((d) => set通道说(d.说 || (d.ok ? '好了' : '没成')))
+        }).then((r) => r.json()).then((d) => {
+          set通道说(d.说 || (d.ok ? '好了' : '没成'))
+          if (d && d.配置) set通道开(d.配置.开关 === true)
+        })
           .catch((err) => set通道说('没发出去：' + String(err)))
       }
+      useEffect(() => {
+        void fetch('/dsh-fishsoul/qqlink').then((r) => r.json()).then((d) => {
+          if (d && d.配置) set通道开(d.配置.开关 === true)
+        }).catch(() => {})
+      }, [])
       return e('div', null,
         e('div', { className: 'fk-switch-row' }, e('span', { className: 'fk-name' }, '行为'), e(Switch, { on: (状态.manifest && 状态.manifest.modules && 状态.manifest.modules.behavior) !== false, onChange: (v) => 改({ manifest: { ...(状态.manifest || {}), modules: { ...((状态.manifest || {}).modules || {}), behavior: v } } }) })),
         e('div', { className: 'fk-card' },
@@ -573,12 +582,11 @@ window.__ModuleLoader__.load({
             '只读旧文件、只追加不覆盖、密码令牌这类不搬。')),
         // 自己的 QQ 通道（2026-11-05）
         e('div', { className: 'fk-card' },
-          e('div', { className: 'fk-row' }, e('span', { className: 'fk-name' }, '自己的 QQ 通道')),
+          e('div', { className: 'fk-switch-row' },
+            e('span', { className: 'fk-name' }, '自己的 QQ 通道'),
+            e(Switch, { on: 通道开, onChange: (v) => 调通道({ 开关: v }) })),
           e('div', { className: 'fk-note', style: { textAlign: 'left' } },
             '不走别人的桥，自己连 NapCat。要开之前先把旧桥停了，不然一条消息回两遍。'),
-          e('div', { className: 'fk-row' },
-            e('button', { className: 'fk-btn', onClick: () => 调通道({ 开关: true }) }, '开'),
-            e('button', { className: 'fk-btn', onClick: () => 调通道({ 开关: false }) }, '关')),
           e('div', { className: 'fk-note', style: { textAlign: 'left' } }, 通道说),
           e('div', { className: 'fk-row' },
             e('span', { className: 'fk-name' }, '接口'),
