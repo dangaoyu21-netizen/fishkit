@@ -180,7 +180,10 @@
 
 1. **会话里说的话要能自动发回 QQ** —— 关桥的前提。现在只有「收」和「手动发」，没有「自动回」。
    桥是靠 `ctx.on('session/event')` 听回复再发的，咱们得照着补。
-2. **会话标题的 inject**：`inject` 里补了 `sessions`、`sessionTitle`，改完还没重启，下次重启才生效。
+2. **会话标题的 inject**：`inject` 里补了 `sessions`、`sessionTitle`，重启后服务拿到了，但**还没修好**。
+   2026-11-05 深夜诊断结论：启动那一刻 `sessions.list()` 是空的（八秒后才有一条），
+   而且只有那一条拿得到标题 —— 其他几间压根不在 `list()` 里，所以只能显示 id 后六位。
+   下回换个法子：不靠 `list()`，拿 agent 的 id 直接 `sessions.get(id)` 去问标题。
 3. **换 AGPL-3.0**：`LICENSE` 全文、`package.json` 的 `license`、README 加一句。
 4. **小黑盒扫码登录**。
 5. **群聊规矩真执行**（现在只是注入里的提醒）。
