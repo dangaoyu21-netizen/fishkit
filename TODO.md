@@ -4,23 +4,21 @@
 
 ## 一、发版 0.4.0（最后一步）
 
-- CHANGELOG 的 v0.4.0 那节已经写好；`package.json` 已经是 0.4.0、AGPL-3.0-or-later。
-- 剩：git 提交 → 打 tag → GitHub Release → npm publish。
-- 格式规矩照 AGENTS.md：一条一行，`功能名（在哪）：一句话说清加了啥`。
+- CHANGELOG、package.json（0.4.0 / AGPL-3.0-or-later）、README 都齐了。
+- `pnpm pack --dry-run` 看过包内容：lib 全部 + client.js + cordis.patch.yml + LICENSE + README + tools/qr_make.py。
+- 本地已经 git 提交（149df68，后面又补了 files 里加 qr_make.py）。
+- **卡在 token**：`tools/release.py` 要 `~/.dsh/gh-token.txt` 和 `~/.dsh/npm-token.txt`，两个都没有。
+- 老大放好之后跑 `python tools/release.py`：提交 → 推 GitHub → 打 tag → 发 npm → 建 Release。
 
-## 二、QQ 通道（只剩真上线那一刀）
+## 二、QQ 通道（切完了）
 
-旧桥（`dsh-qq-bridge`）还挂着。代码齐了，剩下的是切换：
+旧桥（`dsh-qq-bridge`）总开关已经关了（2026-11-06 20:17）；自己的通道在收发，验过一轮。
 
-1. 重启 DSH（新代码生效）。
-2. 设置页「行为 → 自己的 QQ 通道」：打开通道，再打开「自动回 QQ」。
-3. 从 QQ 发一条私聊：会话里该收到，我的回复该回到 QQ。
-4. 两个都通了，再去桥那边关总开关。两条一起跑会一条消息回两遍。
-
-「只回 QQ 唤醒」默认开着，验证时别关。
-
-**已经做完的**：私聊收发、群消息（@ / 关键字 / 门槛）、图片、语音转写、五秒去重、断线重连、
-自动回 QQ（按绑定发回、三道闸、试运行）、群聊规矩真执行（敏感词不转、三次后哈气、十分钟静默、五秒挑两条）。
+- 收：20:16:48 老大私聊进来，转到本会话。
+- 发：20:18:56 回复推回 QQ。
+- 闸：「只回 QQ 唤醒」拦住桌面自己聊的轮次。
+- 剩下的：等他再发一条做最终确认（日志两边对照，只出现一次）。
+- 以后要改绑定/换会话，改 `.fishsoul/qq.json` 的 `绑定`，别动旧桥。
 
 ## 三、记忆
 

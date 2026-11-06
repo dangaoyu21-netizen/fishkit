@@ -57,3 +57,5 @@ try { apply(ctx) } catch (error) { 炸了 = error }
 说('')
 说('路由 ' + 路由们.length + ' 条')
 说(process.exitCode ? '有没过的' : '全过了：' + 过 + ' 项')
+// 真开了通道的话会挂着 WebSocket，进程不退出 —— 验完就走
+setTimeout(() => process.exit(process.exitCode || 0), 50)

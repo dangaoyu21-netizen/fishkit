@@ -13,7 +13,8 @@
   "files": [
     "lib",
     "client.js",
-    "cordis.patch.yml"
+    "cordis.patch.yml",
+    "tools/qr_make.py"
   ],
   "dsh": {
     "bundle": {

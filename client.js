@@ -47,7 +47,7 @@ window.__ModuleLoader__.load({
       .fk-card { border:1px solid rgba(127,127,127,.28); background:rgba(127,127,127,.08); border-radius:8px; padding:10px 12px; margin:0 0 10px 0; }
       .fk-row { display:flex; align-items:center; gap:8px; padding:3px 0; }
       .fk-grow { flex:1; }
-      .fk-win { border:1px solid rgba(127,127,127,.28); background:rgba(127,127,127,.06); color:var(--text-primary, #e8e8e8); border-radius:6px; padding:10px 12px; line-height:1.5; }
+      .fk-win { border:1px solid rgba(127,127,127,.28); background:rgba(127,127,127,.06); color:var(--text-primary, #e8e8e8); border-radius:6px; padding:10px 12px; line-height:1.5; overflow:auto; }
       .fk-w2 { min-height:40px; font-size:12px; max-height:40px; overflow:auto; }
       .fk-w5 { max-height:96px; font-size:12px; overflow:auto; }
       .fk-note { color:#8f8f8f; font-size:12px; font-style:italic; text-align:center; margin:8px 0; }
@@ -164,7 +164,9 @@ window.__ModuleLoader__.load({
                 e(Trash, { onClick: () => 存人(人.filter((x, j) => j !== i)) }))))),
         e(Note, null,
           e('div', null, '新人第一次对话进来，初始好感不超过 20%。'),
-          e('div', null, '增减克制，会天然回落：高于 15% 时最低 15%，否则最低 5%。')))
+          e('div', null, '增减克制，会天然回落：高于 15% 时最低 15%，否则最低 5%。')),
+        // QQ 通道（2026-11-06 从行为页挪过来）
+        e(QQ通道卡, { 状态 }))
     }
 
     // ── 记忆页 ─────────────────────────────────────────────
@@ -378,6 +380,127 @@ window.__ModuleLoader__.load({
             : e('div', { className: 'fk-note' }, '还没写过回顾')))
     }
 
+    // ── 自己的 QQ 通道（2026-11-06：从行为页挪到态度页，带绑定列表和添加按钮）──
+    function QQ通道卡({ 状态 }) {
+      const [通道说, set通道说] = useState('')
+      const [通道开, set通道开] = useState(false)
+      const [通道配, set通道配] = useState({})
+      const [语音说, set语音说] = useState('')
+      const [接口说, set接口说] = useState('')
+      const [加绑, set加绑] = useState(false)
+      const [新绑, set新绑] = useState({ 类型: '私聊', 号码: '', 会话: '', 称呼: '' })
+      const 活 = (状态 && 状态.活会话) || []
+      const 旧 = (状态 && 状态.会话们) || []
+      const 会话们 = 活.length ? 活 : 旧
+      const 归 = (s) => String(s || '').replace(/^session-/, '')
+      const 全id = (x) => {
+        const id = String((x && x.id) || '')
+        return id.startsWith('session-') ? id : 'session-' + id
+      }
+      const 会话名 = (sid) => {
+        const 找 = 会话们.find((x) => x && 归(x.id) === 归(sid))
+        return 找 ? (找.名 || String(找.id).slice(-6)) : String(sid || '').slice(-8)
+      }
+      const 刷新 = (d) => {
+        if (!d) return
+        if (d.配置) { set通道开(d.配置.开关 === true); set通道配(d.配置) }
+        if (d.说) set通道说(d.说)
+      }
+      const 查接口 = () => {
+        set接口说('在探…')
+        void fetch('/dsh-fishsoul/qqprobe', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' })
+          .then((r) => r.json()).then((d) => {
+            set接口说(d.在线 ? ('通了：' + (d.昵称 || '') + '（' + (d.号 || '') + '）') : (d.说 || '连不上'))
+          }).catch(() => set接口说('没发出去'))
+      }
+      const 查语音 = (装) => {
+        set语音说(装 ? '开始装了…' : '在查…')
+        void fetch('/dsh-fishsoul/asr', {
+          method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(装 ? { 装: true } : {}),
+        }).then((r) => r.json()).then((d) => set语音说(d.说 || (d.已装 ? '装好了' : '还没装')))
+          .catch(() => set语音说('没发出去'))
+      }
+      const 调通道 = (体) => {
+        set通道说('…')
+        void fetch('/dsh-fishsoul/qqlink', {
+          method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(体),
+        }).then((r) => r.json()).then(刷新).catch((err) => set通道说('没发出去：' + String(err)))
+      }
+      const 调设置 = (补) => {
+        set通道说('…')
+        void fetch('/dsh-fishsoul/qqlink', {
+          method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ 设置: 补 }),
+        }).then((r) => r.json()).then(刷新).catch((err) => set通道说('没发出去：' + String(err)))
+      }
+      const 存绑定 = (下一个) => {
+        const 文本 = (下一个 || []).map((b) => [b.类型 || '私聊', b.号码, b.会话, b.称呼 || ''].join('|')).join('\n')
+        set通道说('…')
+        void fetch('/dsh-fishsoul/qqlink', {
+          method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ 绑定文本: 文本 }),
+        }).then((r) => r.json()).then(刷新).catch((err) => set通道说('没发出去：' + String(err)))
+      }
+      useEffect(() => {
+        void fetch('/dsh-fishsoul/qqlink').then((r) => r.json()).then(刷新).catch(() => {})
+      }, [])
+      const 绑定 = 通道配.绑定 || []
+      return e('div', null,
+        e('div', { className: 'fk-card' },
+          e('div', { className: 'fk-switch-row' },
+            e('span', { className: 'fk-name' }, '自己的 QQ 通道'),
+            e(Switch, { on: 通道开, onChange: (v) => 调通道({ 开关: v }) })),
+          e('div', { className: 'fk-note', style: { textAlign: 'left' } }, '不走别人的桥，自己连 NapCat。'),
+          e('div', { className: 'fk-note', style: { textAlign: 'left' } }, 通道说),
+          e('div', { className: 'fk-switch-row' },
+            e('span', { className: 'fk-name' }, '自动回 QQ'),
+            e(Switch, { on: 通道配.自动回 === true, onChange: (v) => 调设置({ 自动回: v }) })),
+          e('div', { className: 'fk-note', style: { textAlign: 'left' } }, '会话里说的话会按绑定发回 QQ。'),
+          e('div', { className: 'fk-switch-row' },
+            e('span', { className: 'fk-name' }, '只回 QQ 唤醒'),
+            e(Switch, { on: 通道配.只回QQ唤醒 !== false, onChange: (v) => 调设置({ 只回QQ唤醒: v }) })),
+          e('div', { className: 'fk-note', style: { textAlign: 'left' } }, '开着就只在 QQ 叫醒的轮次里回。')),
+        // 绑定：谁 / 群 对到哪间会话
+        e('div', { className: 'fk-card' },
+          e('div', { className: 'fk-row' },
+            e('span', { className: 'fk-name' }, '绑定了谁'),
+            e('button', { className: 'fk-btn', style: { marginLeft: 'auto' }, onClick: () => set加绑(!加绑) }, 加绑 ? '收起' : '添加绑定')),
+          e('div', { className: 'fk-win', style: { maxHeight: 150, overflow: 'auto', marginTop: 6 } },
+            绑定.length === 0
+              ? e('div', { className: 'fk-note' }, '还没绑，QQ 上的人找不到这间')
+              : 绑定.map((b, i) => e('div', { className: 'fk-person', key: i },
+                e('span', { style: { width: 46, whiteSpace: 'nowrap' } }, b.类型 || '私聊'),
+                e('span', { style: { width: 92, whiteSpace: 'nowrap' } }, String(b.号码)),
+                e('span', { className: 'fk-sub', style: { flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, (b.称呼 || '') + ' → ' + 会话名(b.会话)),
+                e(Trash, { onClick: () => 存绑定(绑定.filter((x, j) => j !== i)) })))),
+          加绑
+            ? e('div', { style: { marginTop: 8 } },
+              e('div', { className: 'fk-row' },
+                e('select', { className: 'fk-search', value: 新绑.类型, onChange: (ev) => set新绑({ ...新绑, 类型: ev.target.value }) },
+                  e('option', { value: '私聊' }, '私聊'), e('option', { value: '群' }, '群')),
+                e('input', { className: 'fk-search', style: { width: 110 }, placeholder: '号码', value: 新绑.号码, onChange: (ev) => set新绑({ ...新绑, 号码: String(ev.target.value).replace(/[^0-9]/g, '') }) }),
+                e('input', { className: 'fk-search', style: { width: 90 }, placeholder: '称呼', value: 新绑.称呼, onChange: (ev) => set新绑({ ...新绑, 称呼: ev.target.value }) })),
+              e('div', { className: 'fk-row' },
+                e('select', { className: 'fk-search fk-grow', value: 新绑.会话, onChange: (ev) => set新绑({ ...新绑, 会话: ev.target.value }) },
+                  e('option', { value: '' }, '选一间会话'),
+                  会话们.map((x) => e('option', { key: 全id(x), value: 全id(x) }, (x.名 || String(x.id).slice(-6))))),
+                e('button', { className: 'fk-btn', onClick: () => {
+                  if (!新绑.号码 || !新绑.会话) { set通道说('号码和会话都得填'); return }
+                  存绑定(绑定.concat([{ ...新绑 }]))
+                  set新绑({ 类型: '私聊', 号码: '', 会话: '', 称呼: '' })
+                  set加绑(false)
+                } }, '加上')))
+            : null),
+        e('div', { className: 'fk-card' },
+          e('div', { className: 'fk-row' },
+            e('span', { className: 'fk-name' }, '接口'),
+            e('button', { className: 'fk-btn', onClick: 查接口 }, '查一下')),
+          e('div', { className: 'fk-note', style: { textAlign: 'left' } }, 接口说),
+          e('div', { className: 'fk-row' },
+            e('span', { className: 'fk-name' }, '语音转文字'),
+            e('button', { className: 'fk-btn', onClick: () => 查语音(false) }, '查一下'),
+            e('button', { className: 'fk-btn', onClick: () => 查语音(true) }, '装依赖')),
+          e('div', { className: 'fk-note', style: { textAlign: 'left' } }, 语音说)))
+    }
+
     // ── 行为页 ─────────────────────────────────────────────
     //
     //      .-'''-.
@@ -418,51 +541,6 @@ window.__ModuleLoader__.load({
         while (游标 < 新们.length) 合并.push(新们[游标++])
         改({ rules: { ...r, rules: 合并 } })
       }
-      // 自己的 QQ 通道（2026-11-05）：默认关着，开之前先把旧桥停了
-      const [通道说, set通道说] = useState('')
-      const [通道开, set通道开] = useState(false)
-      const [通道配, set通道配] = useState({})
-      const [语音说, set语音说] = useState('')
-      const [接口说, set接口说] = useState('')
-      const 查接口 = () => {
-        set接口说('在探…')
-        void fetch('/dsh-fishsoul/qqprobe', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' })
-          .then((r) => r.json()).then((d) => {
-            set接口说(d.在线 ? ('通了：' + (d.昵称 || '') + '（' + (d.号 || '') + '）') : (d.说 || '连不上'))
-          }).catch(() => set接口说('没发出去'))
-      }
-      const 查语音 = (装) => {
-        set语音说(装 ? '开始装了…' : '在查…')
-        void fetch('/dsh-fishsoul/asr', {
-          method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(装 ? { 装: true } : {}),
-        }).then((r) => r.json()).then((d) => set语音说(d.说 || (d.已装 ? '装好了' : '还没装')))
-          .catch(() => set语音说('没发出去'))
-      }
-      const 调通道 = (体) => {
-        set通道说('…')
-        void fetch('/dsh-fishsoul/qqlink', {
-          method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(体),
-        }).then((r) => r.json()).then((d) => {
-          set通道说(d.说 || (d.ok ? '好了' : '没成'))
-          if (d && d.配置) { set通道开(d.配置.开关 === true); set通道配(d.配置) }
-        })
-          .catch((err) => set通道说('没发出去：' + String(err)))
-      }
-      // 自动回那几个开关（2026-11-06）：存进 qq.json，后端下次读就是新的
-      const 调设置 = (补) => {
-        set通道说('…')
-        void fetch('/dsh-fishsoul/qqlink', {
-          method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ 设置: 补 }),
-        }).then((r) => r.json()).then((d) => {
-          set通道说(d.说 || (d.ok ? '记下了' : '没记上'))
-          if (d && d.配置) set通道配(d.配置)
-        }).catch((err) => set通道说('没发出去：' + String(err)))
-      }
-      useEffect(() => {
-        void fetch('/dsh-fishsoul/qqlink').then((r) => r.json()).then((d) => {
-          if (d && d.配置) { set通道开(d.配置.开关 === true); set通道配(d.配置) }
-        }).catch(() => {})
-      }, [])
       return e('div', null,
         e('div', { className: 'fk-switch-row' }, e('span', { className: 'fk-name' }, '行为'), e(Switch, { on: (状态.manifest && 状态.manifest.modules && 状态.manifest.modules.behavior) !== false, onChange: (v) => 改({ manifest: { ...(状态.manifest || {}), modules: { ...((状态.manifest || {}).modules || {}), behavior: v } } }) })),
         e('div', { className: 'fk-card' },
@@ -528,18 +606,18 @@ window.__ModuleLoader__.load({
                 // 注释固定在下拉左边、留恒定宽度：切换选项时下拉不会左右跳
                 e('span', {
                   className: 'fk-sub',
-                  style: { width: 132, textAlign: 'right', visibility: s.方向 === '跟随全局' ? 'visible' : 'hidden' },
-                }, '（听平台账号那边勾的）'),
+                  style: { width: 132, textAlign: 'right', visibility: s.方向 === '随机' ? 'visible' : 'hidden' },
+                }, '（从菜单里抽一件）'),
                 e('select', {
                   className: 'fk-search',
-                  defaultValue: s.方向 || '跟随全局',
+                  defaultValue: s.方向 || '随机',
                   onChange: (ev) => {
                     void fetch('/dsh-fishsoul/sessions/set', {
                       method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: s.id, 方向: ev.target.value }),
                     }).then((r) => r.json()).then((d) => { if (d.ok) { if (载入) 载入() } }).catch(() => {})
                   },
                 },
-                  ['无', '跟随全局', ...(状态.平台名 || [])].map((o) => e('option', { key: o, value: o }, o))))))),
+                  ['思考神游', '随机', ...(状态.平台名 || [])].map((o) => e('option', { key: o, value: o }, o))))))),
         e(Note, null, '闲着的时候自己翻翻记忆、想想话题；说「安静」就停。'),
         // 平台账号（2026-11-03）：看登着谁、能删；左边勾上的才允许主动去用
         e('div', { className: 'fk-card' },
@@ -632,35 +710,7 @@ window.__ModuleLoader__.load({
               },
             }, '让它去搬')),
           e('div', { className: 'fk-note', style: { textAlign: 'left' } },
-            '只读旧文件、只追加不覆盖、密码令牌这类不搬。')),
-        // 自己的 QQ 通道（2026-11-05）
-        e('div', { className: 'fk-card' },
-          e('div', { className: 'fk-switch-row' },
-            e('span', { className: 'fk-name' }, '自己的 QQ 通道'),
-            e(Switch, { on: 通道开, onChange: (v) => 调通道({ 开关: v }) })),
-          e('div', { className: 'fk-note', style: { textAlign: 'left' } },
-            '不走别人的桥，自己连 NapCat。要开之前先把旧桥停了，不然一条消息回两遍。'),
-          e('div', { className: 'fk-note', style: { textAlign: 'left' } }, 通道说),
-          // 自动回（2026-11-06）：会话里说的话按绑定发回 QQ
-          e('div', { className: 'fk-switch-row' },
-            e('span', { className: 'fk-name' }, '自动回 QQ'),
-            e(Switch, { on: 通道配.自动回 === true, onChange: (v) => 调设置({ 自动回: v }) })),
-          e('div', { className: 'fk-note', style: { textAlign: 'left' } },
-            '会话里说的话会按绑定发回 QQ。旧桥还开着的时候先别开，不然一条消息回两遍。'),
-          e('div', { className: 'fk-switch-row' },
-            e('span', { className: 'fk-name' }, '只回 QQ 唤醒'),
-            e(Switch, { on: 通道配.只回QQ唤醒 !== false, onChange: (v) => 调设置({ 只回QQ唤醒: v }) })),
-          e('div', { className: 'fk-note', style: { textAlign: 'left' } },
-            '开着就只在 QQ 消息叫醒的轮次里回，你坐这儿自己聊的不往外推。'),
-          e('div', { className: 'fk-row' },
-            e('span', { className: 'fk-name' }, '接口'),
-            e('button', { className: 'fk-btn', onClick: 查接口 }, '查一下')),
-          e('div', { className: 'fk-note', style: { textAlign: 'left' } }, 接口说),
-          e('div', { className: 'fk-row' },
-            e('span', { className: 'fk-name' }, '语音转文字'),
-            e('button', { className: 'fk-btn', onClick: () => 查语音(false) }, '查一下'),
-            e('button', { className: 'fk-btn', onClick: () => 查语音(true) }, '装依赖')),
-          e('div', { className: 'fk-note', style: { textAlign: 'left' } }, 语音说)))
+            '只读旧文件、只追加不覆盖、密码令牌这类不搬。')))
     }
 
     // ── 更新历史页 ─────────────────────────────────────────
