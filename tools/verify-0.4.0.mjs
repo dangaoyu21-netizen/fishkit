@@ -60,10 +60,10 @@ await 查('QQ 绑定里老大指向本会话', async () => {
   if (!行) throw new Error('没有老大那条')
   return 行.会话
 })
-await 查('自动回这会儿是关着的（切桥前必须这样）', async () => {
+await 查('自动回现在开着（切完旧桥以后就该开）', async () => {
   const d = await 取('/dsh-fishsoul/qqlink')
-  if (d.配置 && d.配置.自动回 === true) throw new Error('自动回已经开了，先别开')
-  return '关着'
+  if (!(d.配置 && d.配置.自动回 === true)) throw new Error('自动回关着')
+  return '开着'
 })
 
 说('== 出门逛 ==')
