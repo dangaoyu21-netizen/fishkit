@@ -65,7 +65,7 @@ const 句 = 兴趣.拼注入()
 说('== 常数 ==')
 查('一步 0.18', () => { assert.equal(一步, 0.18) })
 查('最低两次', () => { assert.equal(最低次数, 2) })
-查('上限十类', () => { assert.equal(类上限, 10) })
+查('上限六十四类', () => { assert.equal(类上限, 64) })
 
 说('== 抽一次（出门往哪儿）==')
 const 抽根 = mkdtempSync(join(tmpdir(), 'fishkit-draw-'))
@@ -94,9 +94,22 @@ rmSync(抽根, { recursive: true, force: true })
 说('== 上限 ==')
 const 上根 = mkdtempSync(join(tmpdir(), 'fishkit-cap-'))
 const 上兴 = 建兴趣({ 根: 上根 })
-for (let i = 0; i < 15; i++) 上兴.记({ 名: '类' + i, 劲: 0.2 + i * 0.04 })
-查('最多留十类', () => { assert.equal(上兴.读().length, 类上限) })
-查('留下的是分数高的', () => { assert.ok(上兴.读().some((x) => x.名 === '类14')) })
+// 单字类名不会互相归并（像一类 只在两个字以上才比）
+const 单字 = '甲乙丙丁戊己庚辛壬癸子丑寅卯辰巳午未申酉戌亥'
+for (let i = 0; i < 15; i++) 上兴.记({ 名: 单字[i], 劲: 0.2 + i * 0.04 })
+查('上限之内全留着', () => { assert.equal(上兴.读().length, 15) })
+查('上限是 64', () => { assert.equal(类上限, 64) })
+// 直接摆 70 类，再记一次触发收一收
+mkdirSync(join(上根, 'persona'), { recursive: true })
+writeFileSync(join(上根, 'persona', 'interests.json'), JSON.stringify({
+  类们: Array.from({ length: 70 }, (_, i) => ({
+    名: String.fromCharCode(0x4e00 + i), 分: (i - 30) / 100, 次数: 2, 末次: new Date().toISOString(),
+  })),
+  刷: { 总: 0, 各类: {} },
+}), 'utf8')
+上兴.记({ 名: '另开一类', 劲: 0.5 })
+查('超了就砍到 64', () => { assert.equal(上兴.读().length, 类上限) })
+查('留下的是分数高的', () => { assert.ok(上兴.读().some((x) => x.名 === String.fromCharCode(0x4e00 + 69))) })
 rmSync(上根, { recursive: true, force: true })
 
 rmSync(目录, { recursive: true, force: true })

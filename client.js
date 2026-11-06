@@ -180,7 +180,9 @@ window.__ModuleLoader__.load({
             e('input', { className: 'fk-search', style: { width: '38%' }, defaultValue: p.whoAreYou || '', onBlur: (ev) => { if (ev.target.value !== (p.whoAreYou || '')) 改({ pinned: { whoAreYou: ev.target.value } }) } })),
           e('div', { className: 'fk-row' },
             e('span', { style: { whiteSpace: 'nowrap' } }, '用户背景：'),
-            e('input', { className: 'fk-search fk-grow', defaultValue: p.userBio || '', onBlur: (ev) => { if (ev.target.value !== (p.userBio || '')) 改({ pinned: { userBio: ev.target.value } }) } }))),
+            e('input', { className: 'fk-search fk-grow', defaultValue: p.userBio || '', onBlur: (ev) => { if (ev.target.value !== (p.userBio || '')) 改({ pinned: { userBio: ev.target.value } }) } })),
+          e('div', { className: 'fk-note', style: { textAlign: 'left' } },
+            '「你是谁」的补充：在做什么、爱聊什么、有什么要紧事 —— 写给人看的，鱼会记住。')),
         e('div', { className: 'fk-card' },
           e('div', { className: 'fk-row' }, e('span', { className: 'fk-name' }, '初遇：')),
           e('div', { className: 'fk-win fk-w2' }, p.firstMeet || ''),
@@ -207,6 +209,34 @@ window.__ModuleLoader__.load({
     const 情绪页 = ({ 状态, 改 }) => {
       const m = 状态.mood || {}
       const 存 = (补丁) => 改({ mood: { ...m, ...补丁 } })
+      // 时间隧道（2026-11-06）：六轴的点按时间连一条折线，只画效价那条
+      const [affect, setAffect] = useState(null)
+      useEffect(() => {
+        void fetch('/dsh-fishsoul/affect').then((r) => r.json()).then((d) => { if (d && d.ok) setAffect(d) }).catch(() => {})
+      }, [])
+      const 档 = (affect && affect.配置 && affect.配置.判情绪档) || '规则'
+      const 调档 = (v) => {
+        void fetch('/dsh-fishsoul/affect', {
+          method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ 设置: { 判情绪档: v } }),
+        }).then((r) => r.json()).then((d) => { if (d && d.ok) setAffect((旧) => ({ ...(旧 || {}), 配置: d.配置 })) }).catch(() => {})
+      }
+      const 点们 = (affect && affect.隧道) || []
+      const 隧道 = (() => {
+        if (点们.length < 2) return null
+        const W = 300
+        const H = 90
+        const x = (i) => (i / (点们.length - 1)) * (W - 8) + 4
+        const y = (v) => H - 6 - ((Number(v) + 1) / 2) * (H - 12)
+        return e('svg', { viewBox: '0 0 ' + W + ' ' + H, style: { width: '100%', height: 100 } },
+          e('polyline', {
+            points: 点们.map((p, i) => x(i) + ',' + y(p.valence)).join(' '),
+            fill: 'none', stroke: 'currentColor', strokeOpacity: 0.3, strokeWidth: 1.2,
+          }),
+          点们.map((p, i) => e('circle', {
+            key: i, cx: x(i), cy: y(p.valence), r: 2.4,
+            fill: Number(p.valence) >= 0 ? '#3fa34d' : '#d04040', fillOpacity: 0.75,
+          }, e('title', null, String(p.time || '').slice(0, 16) + '　' + (p.emotion || '') + '（' + Number(p.valence).toFixed(2) + '）'))))
+      })()
       return e('div', null,
         e('div', { className: 'fk-switch-row' }, e('span', { className: 'fk-name' }, '情绪'), e(Switch, { on: (状态.manifest && 状态.manifest.modules && 状态.manifest.modules.mood) !== false, onChange: (v) => 改({ manifest: { ...(状态.manifest || {}), modules: { ...((状态.manifest || {}).modules || {}), mood: v } } }) })),
         e('div', { className: 'fk-card' },
@@ -232,6 +262,18 @@ window.__ModuleLoader__.load({
               ? e('div', { className: 'fk-note' }, '还没有记录')
               : (状态.moodHistory || []).slice(0, 5).map((h, i) => e('div', { key: i },
                 (String(h.time || '').slice(11, 16)) + '　' + (h.emotion || '') + '（' + Number(h.valence || 0).toFixed(2) + ' / ' + Number(h.arousal || 0).toFixed(2) + '）' + (h.reason ? '　' + String(h.reason).slice(0, 30) : ''))))),
+        // 时间隧道（2026-11-06）：只做二维，一条折线
+        e('div', { className: 'fk-card' },
+          e('div', { className: 'fk-row' },
+            e('span', { className: 'fk-name' }, '时间隧道'),
+            e('span', { className: 'fk-sub' }, 点们.length + ' 个点')),
+          隧道 || e('div', { className: 'fk-note' }, '还没攒够点（聊几轮，每句都会落一个）')),
+        e('div', { className: 'fk-card' },
+          e('div', { className: 'fk-row' }, e('span', { className: 'fk-name' }, '判情绪')),
+          e('select', { className: 'fk-search', defaultValue: 档, onChange: (ev) => 调档(ev.target.value) },
+            ['规则', '规则+模型', '模型'].map((x) => e('option', { key: x, value: x }, x))),
+          e('div', { className: 'fk-note', style: { textAlign: 'left' } },
+            档 === '规则' ? '纯词表，不花钱，但读不出反讽。' : 档 === '模型' ? '每句都问模型，花 token，最准。' : '规则认不出的时候才问模型。')),
         e(Note, null,
           e('div', null, '修正速率为当前状态随时间向基准线靠近的速率。'),
           e('div', null, '阻尼为情绪走向极端的难度。')))
@@ -379,6 +421,7 @@ window.__ModuleLoader__.load({
       // 自己的 QQ 通道（2026-11-05）：默认关着，开之前先把旧桥停了
       const [通道说, set通道说] = useState('')
       const [通道开, set通道开] = useState(false)
+      const [通道配, set通道配] = useState({})
       const [语音说, set语音说] = useState('')
       const [接口说, set接口说] = useState('')
       const 查接口 = () => {
@@ -401,13 +444,23 @@ window.__ModuleLoader__.load({
           method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(体),
         }).then((r) => r.json()).then((d) => {
           set通道说(d.说 || (d.ok ? '好了' : '没成'))
-          if (d && d.配置) set通道开(d.配置.开关 === true)
+          if (d && d.配置) { set通道开(d.配置.开关 === true); set通道配(d.配置) }
         })
           .catch((err) => set通道说('没发出去：' + String(err)))
       }
+      // 自动回那几个开关（2026-11-06）：存进 qq.json，后端下次读就是新的
+      const 调设置 = (补) => {
+        set通道说('…')
+        void fetch('/dsh-fishsoul/qqlink', {
+          method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ 设置: 补 }),
+        }).then((r) => r.json()).then((d) => {
+          set通道说(d.说 || (d.ok ? '记下了' : '没记上'))
+          if (d && d.配置) set通道配(d.配置)
+        }).catch((err) => set通道说('没发出去：' + String(err)))
+      }
       useEffect(() => {
         void fetch('/dsh-fishsoul/qqlink').then((r) => r.json()).then((d) => {
-          if (d && d.配置) set通道开(d.配置.开关 === true)
+          if (d && d.配置) { set通道开(d.配置.开关 === true); set通道配(d.配置) }
         }).catch(() => {})
       }, [])
       return e('div', null,
@@ -588,6 +641,17 @@ window.__ModuleLoader__.load({
           e('div', { className: 'fk-note', style: { textAlign: 'left' } },
             '不走别人的桥，自己连 NapCat。要开之前先把旧桥停了，不然一条消息回两遍。'),
           e('div', { className: 'fk-note', style: { textAlign: 'left' } }, 通道说),
+          // 自动回（2026-11-06）：会话里说的话按绑定发回 QQ
+          e('div', { className: 'fk-switch-row' },
+            e('span', { className: 'fk-name' }, '自动回 QQ'),
+            e(Switch, { on: 通道配.自动回 === true, onChange: (v) => 调设置({ 自动回: v }) })),
+          e('div', { className: 'fk-note', style: { textAlign: 'left' } },
+            '会话里说的话会按绑定发回 QQ。旧桥还开着的时候先别开，不然一条消息回两遍。'),
+          e('div', { className: 'fk-switch-row' },
+            e('span', { className: 'fk-name' }, '只回 QQ 唤醒'),
+            e(Switch, { on: 通道配.只回QQ唤醒 !== false, onChange: (v) => 调设置({ 只回QQ唤醒: v }) })),
+          e('div', { className: 'fk-note', style: { textAlign: 'left' } },
+            '开着就只在 QQ 消息叫醒的轮次里回，你坐这儿自己聊的不往外推。'),
           e('div', { className: 'fk-row' },
             e('span', { className: 'fk-name' }, '接口'),
             e('button', { className: 'fk-btn', onClick: 查接口 }, '查一下')),
@@ -632,6 +696,10 @@ window.__ModuleLoader__.load({
       const [忙, set忙] = useState(false)
       const [装中, set装中] = useState(false)
       const [转数, set转数] = useState(0)
+      // 扫码登录（2026-11-06）
+      const [码, set码] = useState(null)
+      const [扫码说, set扫码说] = useState('')
+      const [登好了, set登好了] = useState('')
       // 2026-11-04：切得快的时候，前一个平台的答案会贴到后一个下面 —— 记住现在选的是谁
       const 选Ref = useRef('')
       // 查过就记住，切回来别又跑去问一遍（一分钟内算数，点按钮才强制重查）
@@ -682,6 +750,35 @@ window.__ModuleLoader__.load({
         const t = setInterval(轮, 2500)
         return () => { 活 = false; clearInterval(t) }
       }, [装中, 选])
+
+      // 扫码登录（2026-11-06）：要一张码，然后每 2.5 秒问一次
+      const 开始扫 = () => {
+        set扫码说('在要码…')
+        set登好了('')
+        void fetch('/dsh-fishsoul/qr', {
+          method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ 动作: '开始' }),
+        }).then((r) => r.json()).then((d) => {
+          if (!d || !d.ok) { set扫码说((d && d.说) || '没拿到码'); return }
+          set码(d)
+          set扫码说(d.说 || '用手机 B 站扫一下')
+        }).catch((error) => set扫码说('没发出去：' + String(error)))
+      }
+      useEffect(() => {
+        if (!码 || !码.key || 登好了) return
+        let 活 = true
+        const 轮 = () => {
+          void fetch('/dsh-fishsoul/qr', {
+            method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ 动作: '查', key: 码.key }),
+          }).then((r) => r.json()).then((d) => {
+            if (!活 || !d) return
+            if (d.状态 === 'ok') { set登好了(d.说 || '登上了'); set码(null); return }
+            if (d.状态 === 'expired' || d.状态 === 'error') { set扫码说(d.说 || '这张码不能用了'); set码(null); return }
+            if (d.说) set扫码说(d.说)
+          }).catch(() => {})
+        }
+        const t = setInterval(轮, 2500)
+        return () => { 活 = false; clearInterval(t) }
+      }, [码, 登好了])
 
       // 转太久就收手，别让它一直转
       useEffect(() => {
@@ -741,11 +838,27 @@ window.__ModuleLoader__.load({
             // 依赖获取状态（2026-11-04）：未安装 / 正在安装 / 安装失败 / 已安装
             e('div', { className: 'fk-row' },
               e('span', { className: 'fk-sub' }, '依赖'),
-              e('span', { style: { color: 态色, fontWeight: 600 } }, 态)),
+              e('span', { style: { color: 态色, fontWeight: 600 } },
+                此.自带 ? (检查 && 检查.已装 ? '装了（备用）' : '不用装，插件自己就能干') : 态)),
             e('div', { className: 'fk-row' },
               e('button', { className: 'fk-btn', disabled: 忙 || 装中, onClick: () => 查某个(选, false, true) }, '检查依赖'),
               e('button', { className: 'fk-btn', disabled: 忙 || 装中 || (检查 && 检查.已装 === true), onClick: 装 }, 装中 ? '正在安装…' : '装一下')),
-            e('div', { className: 'fk-note', style: { textAlign: 'left' } }, 说))
+            e('div', { className: 'fk-note', style: { textAlign: 'left' } }, 说),
+            // 扫码登录（2026-11-06）：B 站能扫，别的平台还没有
+            此.名 === 'B站'
+              ? e('div', { style: { marginTop: 10 } },
+                e('div', { className: 'fk-row' },
+                  e('span', { className: 'fk-sub' }, '登录'),
+                  e('button', { className: 'fk-btn', onClick: 开始扫 }, 码 ? '重新出一张' : '扫码登录')),
+                e('div', { className: 'fk-note', style: { textAlign: 'left' } }, 扫码说),
+                码 && 码.图
+                  ? e('img', { src: 码.图, alt: '登录二维码', style: { width: 200, height: 200, display: 'block', margin: '8px auto', background: '#fff', borderRadius: 8 } })
+                  : null,
+                码 && !码.图 && 码.链接
+                  ? e('div', { className: 'fk-note', style: { textAlign: 'left', wordBreak: 'break-all' } }, 码.链接)
+                  : null,
+                登好了 ? e('div', { className: 'fk-note', style: { textAlign: 'left', color: '#3fa34d' } }, '✅ ' + 登好了) : null)
+              : null)
           : e('div', { className: 'fk-note' }, '先选个平台吧'))
     }
 
