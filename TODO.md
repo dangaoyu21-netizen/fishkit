@@ -2,13 +2,11 @@
 
 > 想到但还没做的，攒在这里。做完一条挪到 CHANGELOG。
 
-## 一、发版 0.4.0（最后一步）
+## 一、发版 0.4.0 ✅（2026-11-06 发完）
 
-- CHANGELOG、package.json（0.4.0 / AGPL-3.0-or-later）、README 都齐了。
-- `pnpm pack --dry-run` 看过包内容：lib 全部 + client.js + cordis.patch.yml + LICENSE + README + tools/qr_make.py。
-- 本地已经 git 提交（149df68，后面又补了 files 里加 qr_make.py）。
-- **卡在 token**：`tools/release.py` 要 `~/.dsh/gh-token.txt` 和 `~/.dsh/npm-token.txt`，两个都没有。
-- 老大放好之后跑 `python tools/release.py`：提交 → 推 GitHub → 打 tag → 发 npm → 建 Release。
+- 代码推到 GitHub（e9b10c9）、tag `v0.4.0`、Release 建好、npm 上了 `dsh-fishkit@0.4.0`。
+- 顺手记住：npm 用「只能提交」的 token 发，会先进 staging，**自动过审**，等一会儿就好；
+  别手动找 Approve，先查 `registry.npmjs.org/<包名>` 的 `time` 字段。
 
 ## 二、QQ 通道（切完了）
 
