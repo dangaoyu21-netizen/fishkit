@@ -92,4 +92,8 @@ pnpm add dsh-fishkit
 
 ## 许可
 
-MIT
+从 **v0.4.0** 起换成 **AGPL-3.0-or-later**，之前的版本（0.1.x ~ 0.3.x）仍然是 MIT。
+
+大意是：改了往外发、或者架成服务让人用，都得把改过的也开源；它带专利条款，谁拿专利来告，许可当场作废。老实开源再拿去用，它不拦。
+
+全文见 [LICENSE](LICENSE)，源码在 <https://github.com/dangaoyu21-netizen/fishkit>。
