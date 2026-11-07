@@ -512,6 +512,19 @@ window.__ModuleLoader__.load({
     const 行为页 = ({ 状态, 改, 载入 }) => {
       const r = 状态.rules || {}
       const idle = r.idle || { enabled: true, idleMinutes: 120, maxPerDay: 2 }
+      // 「出门中」进度（2026-11-07）：每 10 秒问一次轻量接口，逛到哪儿一眼看得见
+      const [出门, set出门] = useState(String((状态 && 状态.出门) || ''))
+      useEffect(() => {
+        let 活 = true
+        const 轮 = () => {
+          void fetch('/dsh-fishsoul/walk').then((x) => x.json()).then((d) => {
+            if (活 && d) set出门(String(d.出门 || ''))
+          }).catch(() => {})
+        }
+        轮()
+        const t = setInterval(轮, 10000)
+        return () => { 活 = false; clearInterval(t) }
+      }, [])
       // 「添加账号」那个子窗口开没开、平台表 —— 都归这一页自己管（2026-11-04 修）
       const [加号, set加号] = useState(false)
       const [平台表, set平台表] = useState([])
@@ -542,6 +555,13 @@ window.__ModuleLoader__.load({
         改({ rules: { ...r, rules: 合并 } })
       }
       return e('div', null,
+        // 出门中（2026-11-07）：她现在在逛，还是光说不动
+        出门
+          ? e('div', { className: 'fk-card', style: { borderColor: '#c9963a' } },
+            e('div', { className: 'fk-row' },
+              e('span', { className: 'fk-name' }, '出门中'),
+              e('span', { className: 'fk-sub', style: { flex: 1, textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, 出门)))
+          : null,
         e('div', { className: 'fk-switch-row' }, e('span', { className: 'fk-name' }, '行为'), e(Switch, { on: (状态.manifest && 状态.manifest.modules && 状态.manifest.modules.behavior) !== false, onChange: (v) => 改({ manifest: { ...(状态.manifest || {}), modules: { ...((状态.manifest || {}).modules || {}), behavior: v } } }) })),
         e('div', { className: 'fk-card' },
           e('div', { className: 'fk-row' }, e('span', { className: 'fk-name' }, '群聊规矩')),
@@ -886,13 +906,16 @@ window.__ModuleLoader__.load({
               '用 ' + 此.包 + '（' + 此.作者 + ' · ' + 此.许可 + '）'),
             e('div', { className: 'fk-sub', style: { textAlign: 'left', wordBreak: 'break-all' } }, 此.仓库),
             // 依赖获取状态（2026-11-04）：未安装 / 正在安装 / 安装失败 / 已安装
-            e('div', { className: 'fk-row' },
-              e('span', { className: 'fk-sub' }, '依赖'),
-              e('span', { style: { color: 态色, fontWeight: 600 } },
-                此.自带 ? (检查 && 检查.已装 ? '装了（备用）' : '不用装，插件自己就能干') : 态)),
+            // 2026-11-06：原库被关停的，直接说停用原因，别再让人装
+            此.停用
+              ? e('div', { className: 'fk-note', style: { textAlign: 'left', color: '#c9963a' } }, '原库停用：' + 此.停用)
+              : e('div', { className: 'fk-row' },
+                e('span', { className: 'fk-sub' }, '依赖'),
+                e('span', { style: { color: 态色, fontWeight: 600 } },
+                  此.自带 ? (检查 && 检查.已装 ? '装了（备用）' : '不用装，插件自己就能干') : 态)),
             e('div', { className: 'fk-row' },
               e('button', { className: 'fk-btn', disabled: 忙 || 装中, onClick: () => 查某个(选, false, true) }, '检查依赖'),
-              e('button', { className: 'fk-btn', disabled: 忙 || 装中 || (检查 && 检查.已装 === true), onClick: 装 }, 装中 ? '正在安装…' : '装一下')),
+              e('button', { className: 'fk-btn', disabled: 忙 || 装中 || 此.停用 || (检查 && 检查.已装 === true), onClick: 装 }, 此.停用 ? '已停用' : (装中 ? '正在安装…' : '装一下'))),
             e('div', { className: 'fk-note', style: { textAlign: 'left' } }, 说),
             // 扫码登录（2026-11-06）：B 站能扫，别的平台还没有
             此.名 === 'B站'

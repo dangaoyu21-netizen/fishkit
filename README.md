@@ -85,14 +85,14 @@ pnpm add dsh-fishkit
 ## 用到的第三方工具
 
 平台那点事不自己抠，能借现成的就借。B 站那几个动作（搜、看、字幕、评论、动态）是插件自己走 B 站官方 web 接口，
-wbi 签名自己算，**不依赖 python 库**；下面这些留着当「可选备用」：
+wbi 签名自己算，**不依赖 python 库**。
 
-| 工具 | 作者 | 许可 | 仓库 | 用来干什么 |
+| 工具 | 作者 | 许可 | 仓库 | 状态 |
 |---|---|---|---|---|
-| bilibili-api-python | Nemo2011 | GPL-3.0-or-later | <https://github.com/Nemo2011/bilibili-api> | 备用：搜视频、读字幕、翻评论、发评论、私信、动态 |
-| xiaoheihe-cli | AaronZ345 | MIT | <https://github.com/AaronZ345/xiaoheihe-cli> | 小黑盒的游戏记录和短评、社区帖子、评论和楼中楼 |
+| bilibili-api-python | Nemo2011 | GPL-3.0-or-later | <https://github.com/Nemo2011/bilibili-api> | **已停用**：原仓库 2026-11-06 被清空归档（侵权投诉），插件不再依赖它 |
+| xiaoheihe-cli | AaronZ345 | MIT | <https://github.com/AaronZ345/xiaoheihe-cli> | 可选：小黑盒的游戏记录和短评、社区帖子、评论和楼中楼 |
 
-两个都**不打进安装包**：设置页「平台账号 → 添加账号」里点一下检查依赖，有就跳过，没有才当场装到本机。
+这些库都**不打进安装包**：设置页「平台账号 → 添加账号」里点一下检查依赖，有就跳过，没有才当场装到本机。
 
 ## 许可
 
