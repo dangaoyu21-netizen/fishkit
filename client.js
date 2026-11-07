@@ -914,7 +914,8 @@ window.__ModuleLoader__.load({
                 e('span', { style: { color: 态色, fontWeight: 600 } },
                   此.自带 ? (检查 && 检查.已装 ? '装了（备用）' : '不用装，插件自己就能干') : 态)),
             e('div', { className: 'fk-row' },
-              e('button', { className: 'fk-btn', disabled: 忙 || 装中, onClick: () => 查某个(选, false, true) }, '检查依赖'),
+              // 停用的平台两个按钮都灰掉（2026-11-07）：我们不走那套库了，也没必要再查
+              e('button', { className: 'fk-btn', disabled: 忙 || 装中 || 此.停用, onClick: () => 查某个(选, false, true) }, 此.停用 ? '不用查' : '检查依赖'),
               e('button', { className: 'fk-btn', disabled: 忙 || 装中 || 此.停用 || (检查 && 检查.已装 === true), onClick: 装 }, 此.停用 ? '已停用' : (装中 ? '正在安装…' : '装一下'))),
             e('div', { className: 'fk-note', style: { textAlign: 'left' } }, 说),
             // 扫码登录（2026-11-06）：B 站能扫，别的平台还没有
