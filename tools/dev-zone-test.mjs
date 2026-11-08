@@ -1,4 +1,4 @@
-// 记忆分区 · 本地验证
+﻿// 记忆分区 · 本地验证
 // 跑法：node plugins/dsh-fishkit-dev/tools/dev-zone-test.mjs
 
 import assert from 'node:assert/strict'
@@ -98,8 +98,32 @@ const 科目检索 = 建检索({ 根: 目录 })
   assert.equal(r[0].科目, '画画')
 })
 
+
+说('== 区可以自己加 ==')
+writeFileSync(join(目录, 'memory', 'zones.json'), JSON.stringify({ 我和游戏: 500 }), 'utf8')
+查('zones.json 里加的区能生效', () => {
+  writeFileSync(文件, [JSON.stringify({
+    time: '2026-06-01T12:00:00+08:00', 区: '我和游戏', 科目: '环世界',
+    who: { type: 'person', id: 'owner', name: '老大' },
+    summary: '环世界这局开了 527 个 mod', valence: 0, arousal: 0, emotion: '平静',
+    base: 0.5, weight: 0.5, pins: [], tags: [], status: 'normal',
+  }), JSON.stringify({
+    time: '2026-06-01T12:00:00+08:00', 区: '这几天',
+    who: { type: 'person', id: 'owner', name: '老大' },
+    summary: '环世界这局开了 527 个 mod 的那天', valence: 0, arousal: 0, emotion: '平静',
+    base: 0.5, weight: 0.5, pins: [], tags: [], status: 'normal',
+  })].join('\n') + '\n', 'utf8')
+  const r = 建检索({ 根: 目录 }).找('环世界', { 条数: 5, 现在 })
+  const 游戏 = r.find((x) => x.区 === '我和游戏')
+  const 日常 = r.find((x) => x.区 === '这几天')
+  assert.ok(游戏 && 日常, '两条没都找到')
+  assert.ok(游戏._分 > 日常._分, '游戏=' + 游戏._分 + ' 日常=' + 日常._分)
+})
+
 rmSync(目录, { recursive: true, force: true })
 说('✅ 全过（' + 过 + ' 项）')
+
+
 
 
 
