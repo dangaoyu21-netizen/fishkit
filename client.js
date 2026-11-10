@@ -637,7 +637,7 @@ window.__ModuleLoader__.load({
                     }).then((r) => r.json()).then((d) => { if (d.ok) { if (载入) 载入() } }).catch(() => {})
                   },
                 },
-                  ['思考神游', '随机', ...(状态.平台名 || [])].map((o) => e('option', { key: o, value: o }, o))))))),
+                  ['思考神游', '随机', '整理', ...(状态.平台名 || [])].map((o) => e('option', { key: o, value: o }, o))))))),
         e(Note, null, '闲着的时候自己翻翻记忆、想想话题；说「安静」就停。'),
         // 平台账号（2026-11-03）：看登着谁、能删；左边勾上的才允许主动去用
         e('div', { className: 'fk-card' },
