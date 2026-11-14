@@ -70,6 +70,9 @@ window.__ModuleLoader__.load({
       .fk-track-wrap { position:relative; flex:1; }
       /* 2026-11-14：成长页的滑条统一长度——以前 flex:1 会随左边标签长短伸缩，长短不一 */
       .fk-grow .fk-track-wrap { width:160px; flex:none; }
+      /* 兴趣那几行用网格排：名字 / 滑条 / 分数 / 次数 四列固定，右边才对得齐、滑条也能更长 */
+      .fk-grow-int { display:grid; grid-template-columns:minmax(70px,110px) 200px 46px 50px; align-items:center; gap:8px; }
+      .fk-grow-int .fk-track-wrap { width:auto; flex:none; }
       .fk-mark { position:absolute; top:50%; height:14px; width:2px; transform:translate(-50%,-50%); pointer-events:none; }
       .fk-mark.base { background:rgba(127,127,127,.6); }
       .fk-flat { display:flex; gap:12px; margin-bottom:10px; }
@@ -378,11 +381,11 @@ window.__ModuleLoader__.load({
               : null)),
           兴.length === 0
             ? e('div', { className: 'fk-note' }, '还没出门逛过，兴趣还空着')
-            : 露兴趣.map((x) => e('div', { key: x.名, className: 'fk-row fk-grow' },
-              e('span', { className: 'fk-sub' }, x.名),
+            : 露兴趣.map((x) => e('div', { key: x.名, className: 'fk-row fk-grow-int' },
+              e('span', { className: 'fk-sub', style: { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, x.名),
               e(MoodTrack, { value: Number(x.分) || 0, base: 0, disabled: true, onChange: () => {} }),
-              e('span', { className: 'fk-num' }, Number(x.分 || 0).toFixed(2)),
-              e('span', { className: 'fk-sub' }, Number(x.次数 || 0) + ' 次')))),
+              e('span', { className: 'fk-num', style: { textAlign: 'right' } }, Number(x.分 || 0).toFixed(2)),
+              e('span', { className: 'fk-sub', style: { textAlign: 'right', whiteSpace: 'nowrap' } }, Number(x.次数 || 0) + ' 次')))),
         e('div', { className: 'fk-card' },
           e('div', { className: 'fk-row' }, e('span', { className: 'fk-name' }, '回头看自己')),
           回
