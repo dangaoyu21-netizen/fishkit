@@ -333,7 +333,7 @@ window.__ModuleLoader__.load({
               (证据.length
                 ? 证据.map((x, i) => e('div', { key: i, className: 'fk-note', style: { marginTop: 4 } },
                   (String(x.时间 || '')).slice(5, 10) + '　' + String(x.文 || '').slice(0, 52)))
-                : e('div', { className: 'fk-note' }, cur.manual ? '好吧，你说了算' : '（还没有能撑起它的事）')))),
+                : e('div', { className: 'fk-note' }, cur.manual ? '好吧，你说了算' : '（还没有能撑起它的事）'))))),
         e('div', { className: 'fk-card' },
           e('div', { className: 'fk-row' },
             e('span', { className: 'fk-name' }, '档案模式'),
