@@ -329,11 +329,11 @@ window.__ModuleLoader__.load({
                   e('span', { className: 'fk-pct' }, Number(d.value || 0).toFixed(2)))))),
           e('div', { style: { flex: 1 } },
             e('div', { className: 'fk-win', style: { height: 160, overflow: 'auto', padding: '8px 10px' } },
-              e('div', { className: 'fk-doc-title' }, '证据：' + (cur.key || '')),
+              // 2026-11-14：标题不写了——左边已经点着哪一维，右边再说一遍「证据：热络-疏离」是废话
               (证据.length
                 ? 证据.map((x, i) => e('div', { key: i, className: 'fk-note', style: { marginTop: 4 } },
                   (String(x.时间 || '')).slice(5, 10) + '　' + String(x.文 || '').slice(0, 52)))
-                : e('div', { className: 'fk-note' }, cur.manual ? '好吧，你说了算' : '（还没有能撑起它的事）'))))),
+                : e('div', { className: 'fk-note' }, cur.manual ? '好吧，你说了算' : '（还没有能撑起它的事）')))),
         e('div', { className: 'fk-card' },
           e('div', { className: 'fk-row' },
             e('span', { className: 'fk-name' }, '档案模式'),
