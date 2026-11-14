@@ -1,4 +1,4 @@
-﻿// 记忆分区 · 本地验证
+// 记忆分区 · 本地验证
 // 跑法：node plugins/dsh-fishkit-dev/tools/dev-zone-test.mjs
 
 import assert from 'node:assert/strict'
