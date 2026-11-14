@@ -73,6 +73,9 @@ window.__ModuleLoader__.load({
       /* 兴趣那几行用网格排：名字 / 滑条 / 分数 / 次数 四列固定，右边才对得齐、滑条也能更长 */
       .fk-grow-int { display:grid; grid-template-columns:minmax(70px,110px) 200px 46px 50px; align-items:center; gap:8px; }
       .fk-grow-int .fk-track-wrap { width:auto; flex:none; }
+      /* 2026-11-14：认知那几行同理——左词 / 滑条 / 右词 / 数值 四列，滑条等长且把剩下的宽度吃掉 */
+      .fk-grow-cog { display:grid; grid-template-columns:88px minmax(160px,1fr) 88px 46px; align-items:center; gap:10px; }
+      .fk-grow-cog .fk-track-wrap { width:auto; flex:none; }
       .fk-mark { position:absolute; top:50%; height:14px; width:2px; transform:translate(-50%,-50%); pointer-events:none; }
       .fk-mark.base { background:rgba(127,127,127,.6); }
       .fk-flat { display:flex; gap:12px; margin-bottom:10px; }
@@ -374,11 +377,12 @@ window.__ModuleLoader__.load({
       // 2026-11-14：兴趣默认只露三行，多了收起来（以前六行起步，把页面撑得太高）
       const [展开兴趣, set展开兴趣] = useState(false)
       const 露兴趣 = 展开兴趣 ? 兴 : 兴.slice(0, 3)
-      const 一条 = (键, 左, 右, 值) => e('div', { key: 键, className: 'fk-row fk-grow' },
-        e('span', { className: 'fk-sub' }, 左),
+      // 2026-11-14：认知这几行也改成网格——文字对文字、数值对数值、滑条等长并铺满整行
+      const 一条 = (键, 左, 右, 值) => e('div', { key: 键, className: 'fk-row fk-grow-cog' },
+        e('span', { className: 'fk-sub', style: { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, 左),
         e(MoodTrack, { value: Number(值) || 0, base: 0, disabled: true, onChange: () => {} }),
-        e('span', { className: 'fk-sub' }, 右),
-        e('span', { className: 'fk-num' }, Number(值 || 0).toFixed(2)))
+        e('span', { className: 'fk-sub', style: { textAlign: 'right', whiteSpace: 'nowrap' } }, 右),
+        e('span', { className: 'fk-num', style: { textAlign: 'right' } }, Number(值 || 0).toFixed(2)))
       return e('div', null,
         e(Note, null, '这一页是它自己长出来的，改不动，但它会变'),
         e('div', { className: 'fk-card' },
