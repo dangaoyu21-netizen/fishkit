@@ -292,6 +292,18 @@ window.__ModuleLoader__.load({
       const base = 状态.base || {}
       const dims = 状态.dims || []
       const cur = dims[pick] || dims[0] || {}
+      // 2026-11-14：证据窗口接真数据——点哪个维度就去记忆里找撑着它的事
+      const [证据, set证据] = useState([])
+      useEffect(() => {
+        const key = cur.key
+        if (!key) { set证据([]); return }
+        let 停 = false
+        fetch('/dsh-fishsoul/evidence?key=' + encodeURIComponent(key))
+          .then((r) => r.json())
+          .then((j) => { if (!停) set证据(Array.isArray(j && j.条们) ? j.条们 : []) })
+          .catch(() => { if (!停) set证据([]) })
+        return () => { 停 = true }
+      }, [cur.key])
       const 存维 = (下一个) => 改({ dims: 下一个 })
       const 改维 = (i, v) => 存维(dims.map((d, j) => (j === i ? { ...d, value: v, manual: true, locked: true } : d)))
       const 锁 = (i) => 存维(dims.map((d, j) => (j === i ? { ...d, locked: !d.locked } : d)))
@@ -316,10 +328,12 @@ window.__ModuleLoader__.load({
                       e('path', { d: d.locked ? 'M4.6 6.2V5a2.4 2.4 0 0 1 4.8 0v1.2' : 'M4.6 6.2V5a2.4 2.4 0 0 1 4.8 0', stroke: 'currentColor', strokeWidth: 1.6, fill: 'none' }))),
                   e('span', { className: 'fk-pct' }, Number(d.value || 0).toFixed(2)))))),
           e('div', { style: { flex: 1 } },
-            e('div', { className: 'fk-win', style: { height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' } },
-              e('div', null,
-                e('div', { className: 'fk-doc-title' }, '证据：' + (cur.key || '')),
-                e('div', { className: 'fk-note' }, cur.manual ? '好吧，你说了算' : '（自动算的：记忆里几条事撑起来的）'))))),
+            e('div', { className: 'fk-win', style: { height: 160, overflow: 'auto', padding: '8px 10px' } },
+              e('div', { className: 'fk-doc-title' }, '证据：' + (cur.key || '')),
+              (证据.length
+                ? 证据.map((x, i) => e('div', { key: i, className: 'fk-note', style: { marginTop: 4 } },
+                  (String(x.时间 || '')).slice(5, 10) + '　' + String(x.文 || '').slice(0, 52)))
+                : e('div', { className: 'fk-note' }, cur.manual ? '好吧，你说了算' : '（还没有能撑起它的事）'))))),
         e('div', { className: 'fk-card' },
           e('div', { className: 'fk-row' },
             e('span', { className: 'fk-name' }, '档案模式'),
