@@ -68,6 +68,8 @@ window.__ModuleLoader__.load({
       .fk-lock.on { opacity:1; }
       .fk-zero { position:absolute; left:50%; top:50%; height:8px; width:2px; background:rgba(127,127,127,.65); transform:translate(-50%,-50%); pointer-events:none; z-index:1; }
       .fk-track-wrap { position:relative; flex:1; }
+      /* 2026-11-14：成长页的滑条统一长度——以前 flex:1 会随左边标签长短伸缩，长短不一 */
+      .fk-grow .fk-track-wrap { width:160px; flex:none; }
       .fk-mark { position:absolute; top:50%; height:14px; width:2px; transform:translate(-50%,-50%); pointer-events:none; }
       .fk-mark.base { background:rgba(127,127,127,.6); }
       .fk-flat { display:flex; gap:12px; margin-bottom:10px; }
@@ -352,7 +354,10 @@ window.__ModuleLoader__.load({
 
       const 兴 = (状态.interests || []).slice().sort((a, b) => Number(b.分 || 0) - Number(a.分 || 0))
       const 回 = 状态.reflection || null
-      const 一条 = (键, 左, 右, 值) => e('div', { key: 键, className: 'fk-row' },
+      // 2026-11-14：兴趣默认只露三行，多了收起来（以前六行起步，把页面撑得太高）
+      const [展开兴趣, set展开兴趣] = useState(false)
+      const 露兴趣 = 展开兴趣 ? 兴 : 兴.slice(0, 3)
+      const 一条 = (键, 左, 右, 值) => e('div', { key: 键, className: 'fk-row fk-grow' },
         e('span', { className: 'fk-sub' }, 左),
         e(MoodTrack, { value: Number(值) || 0, base: 0, disabled: true, onChange: () => {} }),
         e('span', { className: 'fk-sub' }, 右),
@@ -365,10 +370,15 @@ window.__ModuleLoader__.load({
             ? e('div', { className: 'fk-note' }, '还没长出来')
             : 认.map((d) => 一条(d.key, d.left, d.right, d.value))),
         e('div', { className: 'fk-card' },
-          e('div', { className: 'fk-row' }, e('span', { className: 'fk-name' }, '兴趣')),
+          e('div', { className: 'fk-row' },
+            e('span', { className: 'fk-name' }, '兴趣'),
+            e('span', { className: 'fk-grow' }),
+            (兴.length > 3
+              ? e('button', { className: 'fk-btn', onClick: () => set展开兴趣((v) => !v) }, 展开兴趣 ? '收起' : ('展开 ' + (兴.length - 3) + ' 类'))
+              : null)),
           兴.length === 0
             ? e('div', { className: 'fk-note' }, '还没出门逛过，兴趣还空着')
-            : 兴.map((x) => e('div', { key: x.名, className: 'fk-row' },
+            : 露兴趣.map((x) => e('div', { key: x.名, className: 'fk-row fk-grow' },
               e('span', { className: 'fk-sub' }, x.名),
               e(MoodTrack, { value: Number(x.分) || 0, base: 0, disabled: true, onChange: () => {} }),
               e('span', { className: 'fk-num' }, Number(x.分 || 0).toFixed(2)),
