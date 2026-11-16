@@ -208,6 +208,13 @@ window.__ModuleLoader__.load({
               : (状态.mistakes || []).slice(-3).map((m, i) => e('div', { key: i },
                 (String(m.time || '').slice(5, 10)) + '　' + (m.title || '') + '　[' + (m.status || '') + ']')))),
         e(Note, null, '她会尝试整理思考过程'),
+        // 2026-11-16：语义搜索现在没做，标清楚为什么——免得以后翻设置以为「开了但没用」
+        e('div', { className: 'fk-card' },
+          e('div', { className: 'fk-row' }, e('span', { className: 'fk-name' }, '检索方式：')),
+          e('div', { className: 'fk-note', style: { textAlign: 'left' } },
+            '现在只有「表」：同义词表 + 字面重合。「按意思搜」（向量）还没做——'
+            + '插件那层拿不到调模型的口子，账号登录态是 DSH 自己的，插件接不过去。'
+            + '要做的话得等 DSH 开放接口、自己开 key、或者本地装小模型，三条路。')),
         e('div', { className: 'fk-card' },
           e('div', { className: 'fk-row' }, e('span', { className: 'fk-name' }, '摘要：')),
           e('div', { className: 'fk-win fk-w5' },
