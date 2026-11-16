@@ -180,6 +180,19 @@ window.__ModuleLoader__.load({
     // ── 记忆页 ─────────────────────────────────────────────
     const 记忆页 = ({ 状态, 改 }) => {
       const p = 状态.pinned || {}
+      // 2026-11-16：语义模型的可选下载（只下模型，运行库太大不自动装）
+      const [语义, set语义] = useState(null)
+      const [下模型中, set下模型中] = useState(false)
+      const 刷语义 = () => { void fetch('/dsh-fishsoul/semantic/status', { cache: 'no-store' }).then((r) => r.json()).then((d) => { if (d && d.ok) set语义(d) }).catch(() => {}) }
+      useEffect(() => { 刷语义() }, [])
+      const 下模型 = () => {
+        set下模型中(true)
+        void fetch('/dsh-fishsoul/semantic/install', { method: 'POST' })
+          .then((r) => r.json())
+          .then(() => { 刷语义() })
+          .catch(() => {})
+          .finally(() => { set下模型中(false) })
+      }
       return e('div', null,
         e('div', { className: 'fk-switch-row' }, e('span', { className: 'fk-name' }, '记忆'), e(Switch, { on: (状态.manifest && 状态.manifest.modules && 状态.manifest.modules.memory) !== false, onChange: (v) => 改({ manifest: { ...(状态.manifest || {}), modules: { ...((状态.manifest || {}).modules || {}), memory: v } } }) })),
         e('div', { className: 'fk-card' },
@@ -215,6 +228,19 @@ window.__ModuleLoader__.load({
             '现在只有「表」：同义词表 + 字面重合。「按意思搜」（向量）还没做——'
             + '插件那层拿不到调模型的口子，账号登录态是 DSH 自己的，插件接不过去。'
             + '要做的话得等 DSH 开放接口、自己开 key、或者本地装小模型，三条路。')),
+        // 本地模型：一键下（二十四兆），运行库另外说
+        e('div', { className: 'fk-card' },
+          e('div', { className: 'fk-row' },
+            e('span', { className: 'fk-name' }, '语义模型：'),
+            e('span', { className: 'fk-sub' },
+              语义 ? (语义.模型 && 语义.模型.齐了 ? '已下载' : '没下（' + ((语义.模型 && 语义.模型.个数) || 0) + '/3）') : '查不到'),
+            e('span', { style: { flex: 1 } }),
+            e('button', { className: 'fk-btn', disabled: 下模型中, onClick: 下模型 },
+              下模型中 ? '下载中…' : '下载模型')),
+          e('div', { className: 'fk-note', style: { textAlign: 'left' } },
+            '只下模型（bge-small-zh 量化版，约二十四兆）。算向量还要 onnxruntime 运行库——'
+            + 'node 版二百九十三兆、web 版一百四十三兆，太重了没自动装；'
+            + (语义 && 语义.运行库 ? '现在运行库里：' + ((语义.运行库.有 || []).join('、') || '什么都没有') : '。'))),
         e('div', { className: 'fk-card' },
           e('div', { className: 'fk-row' }, e('span', { className: 'fk-name' }, '摘要：')),
           e('div', { className: 'fk-win fk-w5' },
