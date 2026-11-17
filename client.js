@@ -221,13 +221,17 @@ window.__ModuleLoader__.load({
               : (状态.mistakes || []).slice(-3).map((m, i) => e('div', { key: i },
                 (String(m.time || '').slice(5, 10)) + '　' + (m.title || '') + '　[' + (m.status || '') + ']')))),
         e(Note, null, '她会尝试整理思考过程'),
-        // 2026-11-16：语义搜索现在没做，标清楚为什么——免得以后翻设置以为「开了但没用」
+        // 2026-11-17：检索方式可以切了——「表」一直开着，「表 + 模型」是开关。
         e('div', { className: 'fk-card' },
-          e('div', { className: 'fk-row' }, e('span', { className: 'fk-name' }, '检索方式：')),
+          e('div', { className: 'fk-switch-row' },
+            e('span', { className: 'fk-name' }, '检索用模型重排'),
+            e(Switch, {
+              on: ((状态.manifest || {}).modules || {}).semantic === true,
+              onChange: (v) => 改({ manifest: { ...(状态.manifest || {}), modules: { ...(((状态.manifest || {}).modules) || {}), semantic: v } } }),
+            })),
           e('div', { className: 'fk-note', style: { textAlign: 'left' } },
-            '现在只有「表」：同义词表 + 字面重合。「按意思搜」（向量）还没做——'
-            + '插件那层拿不到调模型的口子，账号登录态是 DSH 自己的，插件接不过去。'
-            + '要做的话得等 DSH 开放接口、自己开 key、或者本地装小模型，三条路。')),
+            '关着就只用「表」：同义词表 + 字面重合，快、不花钱。'
+            + '开着会让模型再看一遍候选，判「命中 / 相关 / 无关」再排——慢几秒，也可能失败（失败了自动退回表）。')),
         // 本地模型：一键下（二十四兆），运行库另外说
         e('div', { className: 'fk-card' },
           e('div', { className: 'fk-row' },
