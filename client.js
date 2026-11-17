@@ -232,18 +232,19 @@ window.__ModuleLoader__.load({
           e('div', { className: 'fk-note', style: { textAlign: 'left' } },
             '关着就只用「表」：同义词表 + 字面重合，快、不花钱。'
             + '开着会让模型再看一遍候选，判「命中 / 相关 / 无关」再排——慢几秒，也可能失败（失败了自动退回表）。')),
-        // 本地模型：一键下（二十四兆），运行库另外说
+        // 本地模型：2026-11-17 之后它退成「兜底」——重排走的是 DSH 自己的模型
         e('div', { className: 'fk-card' },
           e('div', { className: 'fk-row' },
-            e('span', { className: 'fk-name' }, '语义模型：'),
+            e('span', { className: 'fk-name' }, '本地模型（兜底用）：'),
             e('span', { className: 'fk-sub' },
               语义 ? (语义.模型 && 语义.模型.齐了 ? '已下载' : '没下（' + ((语义.模型 && 语义.模型.个数) || 0) + '/3）') : '查不到'),
             e('span', { style: { flex: 1 } }),
             e('button', { className: 'fk-btn', disabled: 下模型中, onClick: 下模型 },
               下模型中 ? '下载中…' : '下载模型')),
           e('div', { className: 'fk-note', style: { textAlign: 'left' } },
-            '只下模型（bge-small-zh 量化版，约二十四兆）。算向量还要 onnxruntime 运行库——'
-            + 'node 版二百九十三兆、web 版一百四十三兆，太重了没自动装；'
+            '重排用的是 DSH 自己的模型，不用下这个。这是备选：想离线、或者不想花模型钱的时候，'
+            + '用本地这份 bge-small-zh（量化版，二十四兆）自己算相似度。'
+            + '要它真跑起来还得有 onnxruntime 运行库，那个没自动装；'
             + (语义 && 语义.运行库 ? '现在运行库里：' + ((语义.运行库.有 || []).join('、') || '什么都没有') : '。'))),
         e('div', { className: 'fk-card' },
           e('div', { className: 'fk-row' }, e('span', { className: 'fk-name' }, '摘要：')),
