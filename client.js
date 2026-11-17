@@ -318,7 +318,10 @@ window.__ModuleLoader__.load({
           隧道 || e('div', { className: 'fk-note' }, '还没攒够点（聊几轮，每句都会落一个）')),
         e('div', { className: 'fk-card' },
           e('div', { className: 'fk-row' }, e('span', { className: 'fk-name' }, '判情绪')),
-          e('select', { className: 'fk-search', defaultValue: 档, onChange: (ev) => 调档(ev.target.value) },
+          // 2026-11-17：以前用 defaultValue（非受控），只在第一次渲染读一次。
+          // 那时 affect 还没拉回来，绑的是兜底「规则」；数据到了也不会更新，
+          // 所以切走再回来永远显示「规则」。改成 value（受控）。
+          e('select', { className: 'fk-search', value: 档, onChange: (ev) => 调档(ev.target.value) },
             ['规则', '规则+模型', '模型'].map((x) => e('option', { key: x, value: x }, x))),
           e('div', { className: 'fk-note', style: { textAlign: 'left' } },
             档 === '规则' ? '纯词表，不花钱，但读不出反讽。' : 档 === '模型' ? '每句都问模型，花 token，最准。' : '规则认不出的时候才问模型。')),
@@ -699,7 +702,8 @@ window.__ModuleLoader__.load({
                 }, '（从菜单里抽一件）'),
                 e('select', {
                   className: 'fk-search',
-                  defaultValue: s.方向 || '随机',
+                  // 2026-11-17：跟「判情绪」同一个毛病——非受控的 defaultValue 数据回来也不更新。
+                  value: s.方向 || '随机',
                   onChange: (ev) => {
                     void fetch('/dsh-fishsoul/sessions/set', {
                       method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: s.id, 方向: ev.target.value }),
