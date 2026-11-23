@@ -353,11 +353,16 @@ window.__ModuleLoader__.load({
       const 锁 = (i) => 存维(dims.map((d, j) => (j === i ? { ...d, locked: !d.locked } : d)))
       return e('div', null,
         e('div', { className: 'fk-switch-row' }, e('span', { className: 'fk-name' }, '人设'), e(Switch, { on: (状态.manifest && 状态.manifest.modules && 状态.manifest.modules.persona) !== false, onChange: (v) => 改({ manifest: { ...(状态.manifest || {}), modules: { ...((状态.manifest || {}).modules || {}), persona: v } } }) })),
+        // 2026-11-21：人设 / 补充指令 / 回复风格这三行撤掉——
+        // 它们现在都不进上下文了，留着只会让人以为还能调。
+        // 底色留着：名册里那句「我是小肥鱼，软乎乎、黏人」就是从它来的。
         e('div', { className: 'fk-card' },
           e('div', { className: 'fk-row' }, e('span', { className: 'fk-name' }, '底色'), e('input', { className: 'fk-search fk-grow', defaultValue: base.base || '', onBlur: (ev) => { if (ev.target.value !== (base.base || '')) 改({ base: { base: ev.target.value } }) } })),
-          e('div', { className: 'fk-row' }, e('span', { className: 'fk-name' }, '人设'), e('input', { className: 'fk-search fk-grow', defaultValue: base.persona || '', onBlur: (ev) => { if (ev.target.value !== (base.persona || '')) 改({ base: { persona: ev.target.value } }) } })),
-          e('div', { className: 'fk-row' }, e('span', { className: 'fk-name' }, '补充指令'), e('input', { className: 'fk-search fk-grow', defaultValue: base.instructions || '', onBlur: (ev) => { if (ev.target.value !== (base.instructions || '')) 改({ base: { instructions: ev.target.value } }) } })),
-          e('div', { className: 'fk-row' }, e('span', { className: 'fk-name' }, '回复风格'), e('input', { className: 'fk-search fk-grow', defaultValue: base.style || '', onBlur: (ev) => { if (ev.target.value !== (base.style || '')) 改({ base: { style: ev.target.value } }) } }))),
+          e('div', { className: 'fk-note', style: { padding: '2px 2px 8px' } },
+            '名册里那句「我是小肥鱼，软乎乎、黏人」就是从这行拿的。')),
+        // 2026-11-21：维度不再参与注入，说明得写清楚——别让人以为拨一下就能改一个人的性子
+        e('div', { className: 'fk-note', style: { padding: '6px 2px', lineHeight: 1.7 } },
+          '这些是我迄今的总结，不进上下文。拨它，明天不会换一个人；改了只留在档案里，当以后回看的底子。'),
         e('div', { className: 'fk-flat' },
           e('div', { style: { flex: 2 } },
             e('div', { className: 'fk-win', style: { height: 160, overflow: 'auto' } },
@@ -654,6 +659,22 @@ window.__ModuleLoader__.load({
           }),
           e('div', { className: 'fk-note', style: { textAlign: 'left' } }, '一行一条')),
         e('div', { className: 'fk-switch-row' }, e('span', { className: 'fk-name' }, '主动找事做'), e(Switch, { on: idle.enabled !== false, onChange: (v) => 改({ rules: { ...r, idle: { ...idle, enabled: v } } }) })),
+        // 2026-11-22：注入档的开关。以前只有代码里有档位，想拨得手改 manifest.json。
+        e('div', { className: 'fk-row', style: { marginTop: 6 } },
+          e('span', null, '叫醒时的话'),
+          e('select', {
+            className: 'fk-search',
+            style: { width: 'auto', minWidth: 260 },
+            defaultValue: String(Number((状态.manifest && 状态.manifest.modules && 状态.manifest.modules.注入档) || 0)),
+            onChange: (ev) => 改({ manifest: { ...(状态.manifest || {}), modules: { ...((状态.manifest || {}).modules || {}), 注入档: Number(ev.target.value) } } }),
+          },
+            e('option', { value: '0' }, '0 · 完整：方向、工具名、关键词都给'),
+            e('option', { value: '1' }, '1 · 只给方向'),
+            e('option', { value: '2' }, '2 · 只叫醒 + 上次在做什么'),
+            e('option', { value: '3' }, '3 · 只叫醒，别的都不说'),
+          )),
+        e('div', { className: 'fk-note', style: { textAlign: 'left' } },
+          '管的是叫醒我时那句话有多啰嗦，不是我做得多不多。一档一档往下退，退坏了往回拨一格。'),
         e('div', { className: 'fk-card' },
           e('div', { className: 'fk-row' },
             e('span', null, '空闲'),
